@@ -3,99 +3,154 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Student Login</title>
+  <title>Student Login | Tyneceploh Educational Foundation</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+
     body {
-      font-family: Arial, sans-serif;
-      background: #f5f5f5;
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
       padding: 20px;
+      box-sizing: border-box;
+    }
+
+    .login-container {
+      background: white;
+      max-width: 400px;
+      width: 100%;
+      padding: 40px 30px;
+      border-radius: 15px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
       text-align: center;
     }
-    .login-box {
-      background: white;
-      padding: 20px;
-      border-radius: 10px;
-      display: inline-block;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+
+    h2 {
+      margin-bottom: 25px;
+      font-weight: 600;
+      color: #2c3e50;
     }
-    input {
+
+    label {
       display: block;
+      text-align: left;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #34495e;
+      font-size: 14px;
+    }
+
+    input[type="text"],
+    input[type="password"] {
       width: 100%;
-      margin: 10px 0;
-      padding: 10px;
+      padding: 14px 15px;
+      margin-bottom: 25px;
+      border: 1.8px solid #d1d8e0;
+      border-radius: 10px;
       font-size: 16px;
+      transition: border-color 0.3s;
     }
+
+    input[type="text"]:focus,
+    input[type="password"]:focus {
+      border-color: #2980b9;
+      outline: none;
+      box-shadow: 0 0 8px rgba(41, 128, 185, 0.3);
+    }
+
     button {
-      padding: 10px 20px;
-      font-size: 16px;
-      background: #333;
-      color: white;
+      width: 100%;
+      background-color: #2980b9;
       border: none;
-      border-radius: 5px;
+      padding: 15px;
+      border-radius: 10px;
+      color: white;
+      font-weight: 700;
+      font-size: 17px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      box-shadow: 0 5px 10px rgba(41, 128, 185, 0.4);
     }
-    .message {
+
+    button:hover {
+      background-color: #1f6391;
+    }
+
+    #message {
       margin-top: 15px;
-      color: red;
+      font-size: 15px;
+      color: #e74c3c;
+      min-height: 20px;
+      font-weight: 600;
+    }
+
+    @media (max-width: 450px) {
+      .login-container {
+        padding: 30px 20px;
+      }
     }
   </style>
 </head>
 <body>
-
-  <div class="login-box">
+  <div class="login-container">
     <h2>Student Login</h2>
-    <input type="text" id="studentId" placeholder="Enter Student ID" required />
-    <input type="password" id="studentPin" placeholder="Enter PIN" required />
-    <button onclick="loginStudent()">Login</button>
-    <div class="message" id="messageBox"></div>
+    <form id="loginForm" autocomplete="off">
+      <label for="userId">Student ID</label>
+      <input type="text" id="userId" name="userId" placeholder="e.g. TEF001" required />
+
+      <label for="pin">PIN</label>
+      <input type="password" id="pin" name="pin" placeholder="4-digit PIN" required />
+
+      <button type="submit">Login</button>
+    </form>
+
+    <div id="message"></div>
   </div>
 
   <script>
-    function loginStudent() {
-      const studentId = document.getElementById('studentId').value.trim();
-      const studentPin = document.getElementById('studentPin').value.trim();
-      const messageBox = document.getElementById('messageBox');
+    const backendURL = 'https://script.google.com/macros/s/AKfycbzUWtGTKFviAGwhOvjJjjDOUGHn9U-L3XpfqjWYlxs6PzXIcypX8kwwA0tN6EmAgum9/exec';
 
-      if (!studentId || !studentPin) {
-        messageBox.textContent = "Please enter both ID and PIN.";
+    document.getElementById('loginForm').onsubmit = function(e) {
+      e.preventDefault();
+      const userId = document.getElementById('userId').value.trim();
+      const pin = document.getElementById('pin').value.trim();
+
+      if (!userId || !pin) {
+        showMessage('Please enter both Student ID and PIN');
         return;
       }
 
-      const formData = new URLSearchParams();
-      formData.append('action', 'login');
-      formData.append('role', 'student');
-      formData.append('userId', studentId);
-      formData.append('pin', studentPin);
+      const callbackName = 'jsonpCallback_' + Math.floor(Math.random() * 100000);
+      window[callbackName] = function(response) {
+        delete window[callbackName];
+        document.body.removeChild(script);
 
-      fetch('https://script.google.com/macros/s/AKfycbx_bqnFoB4ciSkrrGIObdPMUi_wreGB5RHqPlXKD7XkGpfZDixouRbuKdQER3Lj2OzL/exec', {
-        method: 'POST',
-        body: formData.toString(),
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
-        }
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          messageBox.style.color = 'green';
-          messageBox.textContent = "Welcome, " + data.name;
-
-          // Redirect to student dashboard with userId param after 1 second
-          setTimeout(() => {
-            window.location.href = 'student_dashboard.html?userId=' + encodeURIComponent(studentId);
-          }, 1000);
-
+        if (response.success) {
+          window.location.href = 'student_dashboard.html?studentId=' + encodeURIComponent(userId);
         } else {
-          messageBox.style.color = 'red';
-          messageBox.textContent = "Login failed: " + data.message;
+          showMessage(response.message || 'Login failed');
         }
-      })
-      .catch(error => {
-        messageBox.style.color = 'red';
-        messageBox.textContent = "Error: Network or server issue.";
-        console.error(error);
-      });
+      };
+
+      const url = `${backendURL}?callback=${callbackName}&action=login&role=student&userId=${encodeURIComponent(userId)}&pin=${encodeURIComponent(pin)}`;
+
+      const script = document.createElement('script');
+      script.src = url;
+      script.onerror = function() {
+        showMessage('Network error or backend not reachable');
+        delete window[callbackName];
+        document.body.removeChild(script);
+      };
+      document.body.appendChild(script);
+    };
+
+    function showMessage(msg) {
+      document.getElementById('message').textContent = msg;
     }
   </script>
-
 </body>
 </html>
