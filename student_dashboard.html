@@ -4,37 +4,44 @@
   <title>Student Dashboard</title>
   <style>
     body {
-      font-family: Arial;
-      background-color: #f9f9f9;
+      font-family: Arial, sans-serif;
       padding: 20px;
+      background-color: #f5f5f5;
     }
-    h2 {
+
+    h1 {
       color: #333;
     }
+
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 15px;
+      margin-top: 20px;
+      background: white;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
+
     th, td {
-      border: 1px solid #aaa;
-      padding: 8px;
+      border: 1px solid #ddd;
+      padding: 10px;
       text-align: center;
     }
+
     th {
-      background-color: #ddd;
+      background-color: #4CAF50;
+      color: white;
     }
-    .error {
+
+    #status {
       color: red;
-      font-weight: bold;
+      margin-top: 15px;
     }
   </style>
 </head>
 <body>
-
-  <h2>Student Dashboard</h2>
+  <h1>Student Dashboard</h1>
   <p id="welcome"></p>
-  <p id="status" class="error"></p>
+  <p id="status"></p>
 
   <table id="gradesTable" style="display: none;">
     <thead id="gradesHead"></thead>
@@ -42,52 +49,59 @@
   </table>
 
   <script>
-    const params = new URLSearchParams(window.location.search);
-    const userId = params.get('userId');
-    const pin = params.get('pin');
+    const urlParams = new URLSearchParams(window.location.search);
+    const userId = urlParams.get("id");
+    const pin = urlParams.get("pin");
 
-    document.getElementById("welcome").innerText = `Welcome, Student ID: ${userId}`;
+    if (!userId || !pin) {
+      document.getElementById("status").innerText = "Missing student ID or PIN.";
+    } else {
+      document.getElementById("welcome").innerText = "Welcome, Student ID: " + userId;
 
-    // Send a login request to fetch grades (as your backend expects only action=login)
-    fetch("https://script.google.com/macros/s/AKfycbxD4I6gTNaDa-HgtZQazLP2hZDOa-yEcyt0IBkJNJ008xMu6aDx3Gw0TuY-MgHv83qO/exec", {
-      method: "POST",
-      body: new URLSearchParams({
-        action: "login",
-        role: "student",
-        userId: userId,
-        pin: pin
+      fetch("https://script.google.com/macros/s/AKfycbxD4I6gTNaDa-HgtZQazLP2hZDOa-yEcyt0IBkJNJ008xMu6aDx3Gw0TuY-MgHv83qO/exec", {
+        method: "POST",
+        body: new URLSearchParams({
+          action: "login",
+          role: "student",
+          userId: userId,
+          pin: pin
+        })
       })
-    })
-    .then(res => res.json())
-    .then(data => {
-      if (!data.success) {
-        document.getElementById("status").innerText = data.message || "Login failed";
-        return;
-      }
+      .then(res => res.text())
+      .then(text => {
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch (e) {
+          document.getElementById("status").innerText = "Invalid server response. Please contact the administrator.";
+          console.error("JSON Parse Error:", e, text);
+          return;
+        }
 
-      if (!data.grades || data.grades.length === 0) {
-        document.getElementById("status").innerText = "No grades found.";
-        return;
-      }
+        if (!data.success) {
+          document.getElementById("status").innerText = data.message || "Login failed.";
+          return;
+        }
 
-      // Build table headers
-      const headers = Object.keys(data.grades[0]);
-      const headRow = headers.map(h => `<th>${h}</th>`).join('');
-      document.getElementById("gradesHead").innerHTML = `<tr>${headRow}</tr>`;
+        if (!data.grades || data.grades.length === 0) {
+          document.getElementById("status").innerText = "No grades found.";
+          return;
+        }
 
-      // Build table rows
-      const rows = data.grades.map(row => {
-        return `<tr>${headers.map(h => `<td>${row[h]}</td>`).join('')}</tr>`;
-      }).join('');
+        const headers = Object.keys(data.grades[0]);
+        document.getElementById("gradesHead").innerHTML = `<tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>`;
 
-      document.getElementById("gradesBody").innerHTML = rows;
-      document.getElementById("gradesTable").style.display = "table";
-    })
-    .catch(err => {
-      console.error(err);
-      document.getElementById("status").innerText = "Network error. Try again.";
-    });
+        const rows = data.grades.map(row => {
+          return `<tr>${headers.map(h => `<td>${row[h]}</td>`).join('')}</tr>`;
+        }).join('');
+        document.getElementById("gradesBody").innerHTML = rows;
+        document.getElementById("gradesTable").style.display = "table";
+      })
+      .catch(err => {
+        console.error("Network error:", err);
+        document.getElementById("status").innerText = "Network error. Please try again.";
+      });
+    }
   </script>
-
 </body>
 </html>
