@@ -1,172 +1,93 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Student Dashboard</title>
-<style>
-  body {
-    font-family: Arial, sans-serif;
-    max-width: 700px;
-    margin: auto;
-    padding: 20px;
-    background: #f4f6f8;
-  }
-  h2 {
-    text-align: center;
-    color: #333;
-  }
-  #welcome {
-    text-align: center;
-    font-size: 18px;
-    margin-bottom: 15px;
-  }
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    background: white;
-    box-shadow: 0 2px 5px rgb(0 0 0 / 0.1);
-  }
-  th, td {
-    padding: 12px 15px;
-    border: 1px solid #ddd;
-    text-align: left;
-  }
-  th {
-    background-color: #004aad;
-    color: white;
-  }
-  td.score {
-    font-weight: bold;
-  }
-  .score.low {
-    color: #d9534f; /* red */
-  }
-  .score.high {
-    color: #0275d8; /* blue */
-  }
-  #loading, #error {
-    text-align: center;
-    margin-top: 30px;
-    font-size: 18px;
-  }
-  #error {
-    color: #d9534f;
-  }
-</style>
+  <title>Student Dashboard</title>
+  <style>
+    body {
+      font-family: Arial;
+      background-color: #f9f9f9;
+      padding: 20px;
+    }
+    h2 {
+      color: #333;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+    th, td {
+      border: 1px solid #aaa;
+      padding: 8px;
+      text-align: center;
+    }
+    th {
+      background-color: #ddd;
+    }
+    .error {
+      color: red;
+      font-weight: bold;
+    }
+  </style>
 </head>
 <body>
 
   <h2>Student Dashboard</h2>
-  <div id="welcome"></div>
+  <p id="welcome"></p>
+  <p id="status" class="error"></p>
 
-  <div id="loading">Loading your grades, please wait...</div>
-  <div id="error" style="display:none;"></div>
-
-  <table id="gradesTable" style="display:none;">
-    <thead>
-      <tr>
-        <th>Subject</th>
-        <th>Period</th>
-        <th>Score</th>
-      </tr>
-    </thead>
+  <table id="gradesTable" style="display: none;">
+    <thead id="gradesHead"></thead>
     <tbody id="gradesBody"></tbody>
   </table>
 
-<script>
-  // Helper to get URL param by name
-  function getQueryParam(name) {
+  <script>
     const params = new URLSearchParams(window.location.search);
-    return params.get(name);
-  }
+    const userId = params.get('userId');
+    const pin = params.get('pin');
 
-  async function fetchGrades(userId) {
-    const url = 'https://script.google.com/macros/s/AKfycbx_bqnFoB4ciSkrrGIObdPMUi_wreGB5RHqPlXKD7XkGpfZDixouRbuKdQER3Lj2OzL/exec'; // replace with your backend URL
+    document.getElementById("welcome").innerText = `Welcome, Student ID: ${userId}`;
 
-    const params = new URLSearchParams();
-    params.append('action', 'getApprovedGrades');
-    params.append('role', 'student');
-    params.append('userId', userId);
-
-    try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: params.toString()
-      });
-      return await response.json();
-    } catch (error) {
-      throw new Error('Network or server error');
-    }
-  }
-
-  function renderGrades(grades) {
-    const tbody = document.getElementById('gradesBody');
-    tbody.innerHTML = '';
-
-    if (!grades.length) {
-      tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">No grades found</td></tr>';
-      return;
-    }
-
-    grades.forEach(grade => {
-      const tr = document.createElement('tr');
-
-      const scoreClass = grade.Score >= 70 ? 'high' : 'low';
-
-      tr.innerHTML = `
-        <td>${grade.Subject || ''}</td>
-        <td>${grade.GradePeriod || ''}</td>
-        <td class="score ${scoreClass}">${grade.Score !== undefined ? grade.Score : ''}</td>
-      `;
-
-      tbody.appendChild(tr);
-    });
-  }
-
-  async function init() {
-    const userId = getQueryParam('userId');
-    const welcomeDiv = document.getElementById('welcome');
-    const loadingDiv = document.getElementById('loading');
-    const errorDiv = document.getElementById('error');
-    const gradesTable = document.getElementById('gradesTable');
-
-    if (!userId) {
-      welcomeDiv.textContent = '';
-      loadingDiv.style.display = 'none';
-      errorDiv.style.display = 'block';
-      errorDiv.textContent = 'Missing user ID. Please login properly.';
-      gradesTable.style.display = 'none';
-      return;
-    }
-
-    welcomeDiv.textContent = `Welcome, Student ID: ${userId}`;
-    loadingDiv.style.display = 'block';
-    errorDiv.style.display = 'none';
-    gradesTable.style.display = 'none';
-
-    try {
-      const data = await fetchGrades(userId);
-
-      loadingDiv.style.display = 'none';
-
-      if (data.success) {
-        renderGrades(data.grades);
-        gradesTable.style.display = 'table';
-      } else {
-        errorDiv.style.display = 'block';
-        errorDiv.textContent = data.message || 'No grades available.';
+    // Send a login request to fetch grades (as your backend expects only action=login)
+    fetch("https://script.google.com/macros/s/AKfycbxD4I6gTNaDa-HgtZQazLP2hZDOa-yEcyt0IBkJNJ008xMu6aDx3Gw0TuY-MgHv83qO/exec", {
+      method: "POST",
+      body: new URLSearchParams({
+        action: "login",
+        role: "student",
+        userId: userId,
+        pin: pin
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (!data.success) {
+        document.getElementById("status").innerText = data.message || "Login failed";
+        return;
       }
-    } catch (err) {
-      loadingDiv.style.display = 'none';
-      errorDiv.style.display = 'block';
-      errorDiv.textContent = err.message || 'Failed to fetch grades.';
-    }
-  }
 
-  window.onload = init;
-</script>
+      if (!data.grades || data.grades.length === 0) {
+        document.getElementById("status").innerText = "No grades found.";
+        return;
+      }
+
+      // Build table headers
+      const headers = Object.keys(data.grades[0]);
+      const headRow = headers.map(h => `<th>${h}</th>`).join('');
+      document.getElementById("gradesHead").innerHTML = `<tr>${headRow}</tr>`;
+
+      // Build table rows
+      const rows = data.grades.map(row => {
+        return `<tr>${headers.map(h => `<td>${row[h]}</td>`).join('')}</tr>`;
+      }).join('');
+
+      document.getElementById("gradesBody").innerHTML = rows;
+      document.getElementById("gradesTable").style.display = "table";
+    })
+    .catch(err => {
+      console.error(err);
+      document.getElementById("status").innerText = "Network error. Try again.";
+    });
+  </script>
 
 </body>
 </html>
