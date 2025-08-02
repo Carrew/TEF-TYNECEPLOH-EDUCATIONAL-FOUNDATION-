@@ -1,106 +1,170 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Student Dashboard</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Student Dashboard | Tyneceploh Educational Foundation</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+
     body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      background-color: #f5f5f5;
+      font-family: 'Poppins', sans-serif;
+      background: #f7f9fc;
+      margin: 0; padding: 20px;
+      max-width: 900px;
+      margin-left: auto;
+      margin-right: auto;
     }
-
-    h1 {
-      color: #333;
+    header {
+      text-align: center;
+      margin-bottom: 30px;
     }
-
+    header h1 {
+      font-weight: 600;
+      color: #2c3e50;
+      margin: 0;
+    }
+    #welcome {
+      font-size: 18px;
+      margin-top: 5px;
+      color: #34495e;
+    }
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 20px;
       background: white;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     }
-
     th, td {
-      border: 1px solid #ddd;
-      padding: 10px;
-      text-align: center;
+      padding: 12px 15px;
+      text-align: left;
+      border-bottom: 1px solid #ecf0f1;
     }
-
     th {
-      background-color: #4CAF50;
+      background: #2980b9;
       color: white;
+      font-weight: 600;
     }
-
-    #status {
-      color: red;
-      margin-top: 15px;
+    tr:hover {
+      background-color: #f1f6fb;
+    }
+    .grade-low {
+      color: #e74c3c;
+      font-weight: 700;
+    }
+    .grade-high {
+      color: #2980b9;
+      font-weight: 700;
+    }
+    #message {
+      margin-top: 20px;
+      font-weight: 600;
+      color: #e74c3c;
+      text-align: center;
     }
   </style>
 </head>
 <body>
-  <h1>Student Dashboard</h1>
-  <p id="welcome"></p>
-  <p id="status"></p>
+  <header>
+    <h1>Student Dashboard</h1>
+    <div id="welcome">Loading...</div>
+  </header>
 
-  <table id="gradesTable" style="display: none;">
-    <thead id="gradesHead"></thead>
+  <table id="gradesTable" style="display:none;">
+    <thead>
+      <tr>
+        <th>Subject</th>
+        <th>Period</th>
+        <th>Score</th>
+      </tr>
+    </thead>
     <tbody id="gradesBody"></tbody>
   </table>
 
+  <div id="message"></div>
+
   <script>
-    const urlParams = new URLSearchParams(window.location.search);
-    const userId = urlParams.get("id");
-    const pin = urlParams.get("pin");
+    const backendURL = 'https://script.google.com/macros/s/AKfycbzUWtGTKFviAGwhOvjJjjDOUGHn9U-L3XpfqjWYlxs6PzXIcypX8kwwA0tN6EmAgum9/exec';
 
-    if (!userId || !pin) {
-      document.getElementById("status").innerText = "Missing student ID or PIN.";
+    function getQueryParam(param) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(param);
+    }
+
+    function showMessage(msg) {
+      document.getElementById('message').textContent = msg;
+    }
+
+    function clearMessage() {
+      document.getElementById('message').textContent = '';
+    }
+
+    function loadGrades(studentId) {
+      const callbackName = 'jsonpCallback_' + Math.floor(Math.random() * 100000);
+      window[callbackName] = function(response) {
+        delete window[callbackName];
+        document.body.removeChild(script);
+
+        if (response.success && response.grades && response.grades.length > 0) {
+          document.getElementById('welcome').textContent = `Welcome, ${response.name || studentId}`;
+
+          const tbody = document.getElementById('gradesBody');
+          tbody.innerHTML = ''; // Clear previous
+
+          response.grades.forEach(grade => {
+            const tr = document.createElement('tr');
+
+            const subjectTd = document.createElement('td');
+            subjectTd.textContent = grade.Subject;
+            tr.appendChild(subjectTd);
+
+            const periodTd = document.createElement('td');
+            periodTd.textContent = grade.GradePeriod;
+            tr.appendChild(periodTd);
+
+            const scoreTd = document.createElement('td');
+            scoreTd.textContent = grade.Score;
+            if (parseFloat(grade.Score) < 70) {
+              scoreTd.classList.add('grade-low');
+            } else {
+              scoreTd.classList.add('grade-high');
+            }
+            tr.appendChild(scoreTd);
+
+            tbody.appendChild(tr);
+          });
+
+          document.getElementById('gradesTable').style.display = 'table';
+          clearMessage();
+        } else if(response.success) {
+          document.getElementById('welcome').textContent = `Welcome, ${response.name || studentId}`;
+          showMessage('No grades found.');
+        } else {
+          showMessage(response.message || 'Failed to fetch grades.');
+        }
+      };
+
+      const url = `${backendURL}?callback=${callbackName}&action=getApprovedGrades&role=student&userId=${encodeURIComponent(studentId)}`;
+
+      const script = document.createElement('script');
+      script.src = url;
+      script.onerror = function() {
+        showMessage('Network error or backend not reachable');
+        delete window[callbackName];
+        document.body.removeChild(script);
+      };
+      document.body.appendChild(script);
+    }
+
+    // Main:
+    const studentId = getQueryParam('studentId');
+    if (!studentId) {
+      document.getElementById('welcome').textContent = '';
+      showMessage('Missing Student ID.');
     } else {
-      document.getElementById("welcome").innerText = "Welcome, Student ID: " + userId;
-
-      fetch("https://script.google.com/macros/s/AKfycbxD4I6gTNaDa-HgtZQazLP2hZDOa-yEcyt0IBkJNJ008xMu6aDx3Gw0TuY-MgHv83qO/exec", {
-        method: "POST",
-        body: new URLSearchParams({
-          action: "login",
-          role: "student",
-          userId: userId,
-          pin: pin
-        })
-      })
-      .then(res => res.text())
-      .then(text => {
-        let data;
-        try {
-          data = JSON.parse(text);
-        } catch (e) {
-          document.getElementById("status").innerText = "Invalid server response. Please contact the administrator.";
-          console.error("JSON Parse Error:", e, text);
-          return;
-        }
-
-        if (!data.success) {
-          document.getElementById("status").innerText = data.message || "Login failed.";
-          return;
-        }
-
-        if (!data.grades || data.grades.length === 0) {
-          document.getElementById("status").innerText = "No grades found.";
-          return;
-        }
-
-        const headers = Object.keys(data.grades[0]);
-        document.getElementById("gradesHead").innerHTML = `<tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>`;
-
-        const rows = data.grades.map(row => {
-          return `<tr>${headers.map(h => `<td>${row[h]}</td>`).join('')}</tr>`;
-        }).join('');
-        document.getElementById("gradesBody").innerHTML = rows;
-        document.getElementById("gradesTable").style.display = "table";
-      })
-      .catch(err => {
-        console.error("Network error:", err);
-        document.getElementById("status").innerText = "Network error. Please try again.";
-      });
+      loadGrades(studentId);
     }
   </script>
 </body>
