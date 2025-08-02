@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Teacher Dashboard | Tyneceploh Educational Foundation</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+
+  body {
+    font-family: 'Poppins', sans-serif;
+    background: #f0f4f8;
+    max-width: 900px;
+    margin: 20px auto;
+    padding: 20px;
+  }
+  h1 {
+    text-align: center;
+    color: #2c3e50;
+  }
+  .section {
+    background: white;
+    padding: 20px;
+    border-radius: 15px;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  }
+  label {
+    font-weight: 600;
+    margin-bottom: 6px;
+    display: block;
+    color: #34495e;
+  }
+  select, input[type="text"], input[type="number"] {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1.5px solid #d1d8e0;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    font-size: 16px;
+    box-sizing: border-box;
+  }
+  button {
+    background-color: #2980b9;
+    color: white;
+    font-weight: 700;
+    font-size: 17px;
+    border: none;
+    border-radius: 12px;
+    padding: 14px;
+    cursor: pointer;
+    width: 100%;
+    box-shadow: 0 5px 10px rgba(41, 128, 185, 0.4);
+  }
+  button:hover {
+    background-color: #1f6391;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 25px;
+  }
+  th, td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #ecf0f1;
+    text-align: left;
+  }
+  th {
+    background: #2980b9;
+    color: white;
+  }
+  .grade-low {
+    color: #e74c3c;
+    font-weight: 700;
+  }
+  .grade-high {
+    color: #2980b9;
+    font-weight: 700;
+  }
+  #message {
+    margin-top: 15px;
+    font-weight: 600;
+    color: #e74c3c;
+    text-align: center;
+    min-height: 24px;
+  }
+</style>
+</head>
+<body>
+  <h1>Teacher Dashboard</h1>
+  <div class="section">
+    <label for="classSelect">Select Class</label>
+    <select id="classSelect">
+      <option value="">-- Choose class --</option>
+    </select>
+
+    <label for="studentSelect">Select Student</label>
+    <select id="studentSelect" disabled>
+      <option value="">-- Select class first --</option>
+    </select>
+
+    <label for="subjectInput">Subject</label>
+    <input type="text" id="subjectInput" placeholder="Enter subject name (e.g. Math)" />
+
+    <label for="periodSelect">Select Period</label>
+    <select id="periodSelect">
+      <option value="">-- Select period --</option>
+      <option value="1st Period">1st Period</option>
+      <option value="2nd Period">2nd Period</option>
+      <option value="3rd Period">3rd Period</option>
+      <option value="4th Period">4th Period</option>
+      <option value="5th Period">5th Period</option>
+      <option value="6th Period">6th Period</option>
+      <option value="Semester Exam 1">Semester Exam 1</option>
+      <option value="Semester Exam 2">Semester Exam 2</option>
+    </select>
+
+    <label for="gradeInput">Grade (0 - 100)</label>
+    <input type="number" id="gradeInput" min="0" max="100" placeholder="Enter grade" />
+
+    <button id="submitGradeBtn">Submit Grade</button>
+    <div id="message"></div>
+  </div>
+
+  <div class="section">
+    <h2>Submitted Grades</h2>
+    <table id="gradesTable" style="display:none;">
+      <thead>
+        <tr>
+          <th>Student</th>
+          <th>Subject</th>
+          <th>Period</th>
+          <th>Grade</th>
+        </tr>
+      </thead>
+      <tbody id="gradesBody"></tbody>
+    </table>
+    <p id="noGradesMsg" style="text-align:center; color:#666;">No grades submitted yet.</p>
+  </div>
+
+  <script>
+    const backendURL = 'https://script.google.com/macros/s/AKfycbzUWtGTKFviAGwhOvjJjjDOUGHn9U-L3XpfqjWYlxs6PzXIcypX8kwwA0tN6EmAgum9/exec';
+
+    const classSelect = document.getElementById('classSelect');
+    const studentSelect = document.getElementById('studentSelect');
+    const subjectInput = document.getElementById('subjectInput');
+    const periodSelect = document.getElementById('periodSelect');
+    const gradeInput = document.getElementById('gradeInput');
+    const submitBtn = document.getElementById('submitGradeBtn');
+    const gradesTable = document.getElementById('gradesTable');
+    const gradesBody = document.getElementById('gradesBody');
+    const noGradesMsg = document.getElementById('noGradesMsg');
+    const messageDiv = document.getElementById('message');
+
+    function getQueryParam(param) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(param);
+    }
+
+    let teacherId = getQueryParam('teacherId');
+    if (!teacherId) {
+      alert('Teacher ID missing. Please login again.');
+      window.location.href = 'teacher_login.html';
+    }
+
+    // Classes available (adjust if needed)
+    const classes = [
+      'Kindergarten 1', 'Kindergarten 2',
+      '1st Grade', '2nd Grade', '3rd Grade',
+      '4th Grade', '5th Grade', '6th Grade',
+      '7th Grade', '8th Grade', '9th Grade'
+    ];
+
+    // Fill class dropdown
+    function populateClasses() {
+      classes.forEach(c => {
+        let opt = document.createElement('option');
+        opt.value = c;
+        opt.textContent = c;
+        classSelect.appendChild(opt);
+      });
+    }
+
+    // Fetch students for selected class from backend
+    function fetchStudentsByClass(className) {
+      studentSelect.innerHTML = '';
+      if (!className) {
+        studentSelect.disabled = true;
+        studentSelect.innerHTML = '<option value="">-- Select class first --</option>';
+        return;
+      }
+      const callbackName = 'jsonpCallback_' + Math.floor(Math.random() * 100000);
+      window[callbackName] = function(response) {
+        delete window[callbackName];
+        document.body.removeChild(script);
+
+        if(response.success && response.students && response.students.length > 0){
+          studentSelect.disabled = false;
+          studentSelect.innerHTML = '<option value="">-- Select Student --</option>';
+          response.students.forEach(student => {
+            let opt = document.createElement('option');
+            opt.value = student.StudentID || student.ID || student.userId || student.id; // adjust field if needed
+            opt.textContent = student.StudentName || student.Name || student.name || opt.value;
+            studentSelect.appendChild(opt);
+          });
+        } else {
+          studentSelect.disabled = true;
+          studentSelect.innerHTML = '<option value="">No students found</option>';
+        }
+      };
+
+      const url = `${backendURL}?callback=${callbackName}&action=getStudentsByClass&role=teacher&class=${encodeURIComponent(className)}`;
+
+      const script = document.createElement('script');
+      script.src = url;
+      script.onerror = () => {
+        alert('Failed to load students. Network error.');
+        delete window[callbackName];
+        document.body.removeChild(script);
+      };
+      document.body.appendChild(script);
+    }
+
+    // Submit grade function
+    function submitGrade() {
+      messageDiv.textContent = '';
+      if(!classSelect.value){
+        messageDiv.textContent = 'Please select a class.';
+        return;
+      }
+      if(!studentSelect.value){
+        messageDiv.textContent = 'Please select a student.';
+        return;
+      }
+      if(!subjectInput.value.trim()){
+        messageDiv.textContent = 'Please enter a subject.';
+        return;
+      }
+      if(!periodSelect.value){
+        messageDiv.textContent = 'Please select a period.';
+        return;
+      }
+      const score = parseFloat(gradeInput.value);
+      if(isNaN(score) || score < 0 || score > 100){
+        messageDiv.textContent = 'Please enter a valid grade between 0 and 100.';
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Submitting...';
+
+      const callbackName = 'jsonpCallback_' + Math.floor(Math.random() * 100000);
+      window[callbackName] = function(response) {
+        delete window[callbackName];
+        document.body.removeChild(script);
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Grade';
+
+        if(response.success){
+          messageDiv.style.color = '#27ae60';
+          messageDiv.textContent = 'Grade submitted successfully!';
+          addGradeToTable(studentSelect.options[studentSelect.selectedIndex].text, subjectInput.value.trim(), periodSelect.value, score);
+          // Clear inputs except class and student
+          subjectInput.value = '';
+          periodSelect.value = '';
+          gradeInput.value = '';
+        } else {
+          messageDiv.style.color = '#e74c3c';
+          messageDiv.textContent = response.message || 'Failed to submit grade.';
+        }
+      };
+
+      const url = `${backendURL}?callback=${callbackName}&action=submitGrade&role=teacher&teacherId=${encodeURIComponent(teacherId)}&studentId=${encodeURIComponent(studentSelect.value)}&subject=${encodeURIComponent(subjectInput.value.trim())}&gradePeriod=${encodeURIComponent(periodSelect.value)}&score=${encodeURIComponent(score)}`;
+
+      const script = document.createElement('script');
+      script.src = url;
+      script.onerror = () => {
+        messageDiv.style.color = '#e74c3c';
+        messageDiv.textContent = 'Network error while submitting grade.';
+        delete window[callbackName];
+        document.body.removeChild(script);
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Grade';
+      };
+      document.body.appendChild(script);
+    }
+
+    // Add grade row to table
+    function addGradeToTable(studentName, subject, period, score) {
+      noGradesMsg.style.display = 'none';
+      gradesTable.style.display = 'table';
+
+      const tr = document.createElement('tr');
+
+      const tdStudent = document.createElement('td');
+      tdStudent.textContent = studentName;
+      tr.appendChild(tdStudent);
+
+      const tdSubject = document.createElement('td');
+      tdSubject.textContent = subject;
+      tr.appendChild(tdSubject);
+
+      const tdPeriod = document.createElement('td');
+      tdPeriod.textContent = period;
+      tr.appendChild(tdPeriod);
+
+      const tdScore = document.createElement('td');
+      tdScore.textContent = score;
+      tdScore.className = score < 70 ? 'grade-low' : 'grade-high';
+      tr.appendChild(tdScore);
+
+      gradesBody.appendChild(tr);
+    }
+
+    classSelect.addEventListener('change', () => {
+      fetchStudentsByClass(classSelect.value);
+    });
+
+    submitBtn.addEventListener('click', submitGrade);
+
+    // Initialize
+    populateClasses();
+  </script>
+</body>
+</html>
