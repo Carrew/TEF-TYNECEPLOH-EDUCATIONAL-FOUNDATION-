@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Principal Dashboard</title>
+  <meta charset="UTF-8" />
+  <style>
+    body {
+      font-family: "Segoe UI", sans-serif;
+      background-color: #f3f4f6;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background-color: #4a5568;
+      color: white;
+      padding: 1rem;
+      text-align: center;
+    }
+    .container {
+      padding: 1rem 2rem;
+    }
+    section {
+      background-color: white;
+      padding: 1rem;
+      border-radius: 10px;
+      margin-bottom: 1rem;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    h2 {
+      margin-top: 0;
+    }
+    label {
+      display: block;
+      margin-top: 0.5rem;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 0.5rem;
+      margin-top: 0.25rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    button {
+      margin-top: 1rem;
+      background-color: #2b6cb0;
+      color: white;
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #2c5282;
+    }
+    .response {
+      margin-top: 0.5rem;
+      color: green;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Principal Dashboard</h1>
+  </header>
+  <div class="container">
+    
+    <!-- Create Student Account -->
+    <section>
+      <h2>Create Student Account</h2>
+      <label>Student Name:</label>
+      <input type="text" id="studentName" />
+      <label>Class:</label>
+      <select id="studentClass">
+        <option value="1st Grade">1st Grade</option>
+        <option value="2nd Grade">2nd Grade</option>
+        <option value="3rd Grade">3rd Grade</option>
+        <option value="4th Grade">4th Grade</option>
+        <option value="5th Grade">5th Grade</option>
+        <option value="6th Grade">6th Grade</option>
+        <option value="7th Grade">7th Grade</option>
+        <option value="8th Grade">8th Grade</option>
+        <option value="9th Grade">9th Grade</option>
+        <option value="10th Grade">10th Grade</option>
+        <option value="11th Grade">11th Grade</option>
+        <option value="12th Grade">12th Grade</option>
+      </select>
+      <button onclick="createStudent()">Create Student</button>
+      <div id="studentResponse" class="response"></div>
+    </section>
+
+    <!-- Create Teacher Account -->
+    <section>
+      <h2>Create Teacher Account</h2>
+      <label>Teacher Name:</label>
+      <input type="text" id="teacherName" />
+      <label>Subject:</label>
+      <input type="text" id="teacherSubject" />
+      <button onclick="createTeacher()">Create Teacher</button>
+      <div id="teacherResponse" class="response"></div>
+    </section>
+
+    <!-- Announcement -->
+    <section>
+      <h2>Update Announcement</h2>
+      <label>New Announcement:</label>
+      <textarea id="announcementText" rows="3"></textarea>
+      <button onclick="updateAnnouncement()">Post Announcement</button>
+      <div id="announceResponse" class="response"></div>
+    </section>
+
+    <!-- Grade Approval -->
+    <section>
+      <h2>Approve/Reject Grades</h2>
+      <button onclick="loadSubmittedGrades()">Load Submitted Grades</button>
+      <div id="gradesContainer"></div>
+    </section>
+
+    <!-- Financial View (Placeholder) -->
+    <section>
+      <h2>Financial Overview</h2>
+      <p>Student financial data will be shown here in future.</p>
+    </section>
+
+    <!-- Logout -->
+    <section>
+      <button onclick="window.location.href='index.html'">Logout</button>
+    </section>
+
+  </div>
+
+  <script>
+    const BACKEND_URL = "https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec"; // Replace with your actual backend URL
+
+    function createStudent() {
+      const name = document.getElementById("studentName").value;
+      const studentClass = document.getElementById("studentClass").value;
+      fetch(BACKEND_URL, {
+        method: "POST",
+        body: new URLSearchParams({
+          action: "createStudent",
+          name: name,
+          class: studentClass
+        }),
+      })
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById("studentResponse").innerText = data.message || "Created!";
+      });
+    }
+
+    function createTeacher() {
+      const name = document.getElementById("teacherName").value;
+      const subject = document.getElementById("teacherSubject").value;
+      fetch(BACKEND_URL, {
+        method: "POST",
+        body: new URLSearchParams({
+          action: "createTeacher",
+          name: name,
+          subject: subject
+        }),
+      })
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById("teacherResponse").innerText = data.message || "Created!";
+      });
+    }
+
+    function updateAnnouncement() {
+      const text = document.getElementById("announcementText").value;
+      fetch(BACKEND_URL, {
+        method: "POST",
+        body: new URLSearchParams({
+          action: "postAnnouncement",
+          announcement: text
+        }),
+      })
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById("announceResponse").innerText = data.message || "Updated!";
+      });
+    }
+
+    function loadSubmittedGrades() {
+      fetch(BACKEND_URL + "?action=getSubmittedGrades")
+        .then(res => res.json())
+        .then(data => {
+          const container = document.getElementById("gradesContainer");
+          container.innerHTML = "";
+          if (!data || !data.length) {
+            container.innerHTML = "<p>No grades submitted yet.</p>";
+            return;
+          }
+          data.forEach((entry, index) => {
+            const div = document.createElement("div");
+            div.innerHTML = `
+              <strong>${entry.studentName} (${entry.class})</strong><br/>
+              Subject: ${entry.subject}<br/>
+              Grade: ${entry.grade}<br/>
+              <button onclick="approveGrade('${entry.id}')">Approve</button>
+              <button onclick="rejectGrade('${entry.id}')">Reject</button>
+              <hr/>
+            `;
+            container.appendChild(div);
+          });
+        });
+    }
+
+    function approveGrade(id) {
+      fetch(BACKEND_URL, {
+        method: "POST",
+        body: new URLSearchParams({
+          action: "approveGrade",
+          gradeId: id
+        }),
+      }).then(() => loadSubmittedGrades());
+    }
+
+    function rejectGrade(id) {
+      const reason = prompt("Why are you rejecting this grade?");
+      if (!reason) return;
+      fetch(BACKEND_URL, {
+        method: "POST",
+        body: new URLSearchParams({
+          action: "rejectGrade",
+          gradeId: id,
+          reason: reason
+        }),
+      }).then(() => loadSubmittedGrades());
+    }
+  </script>
+</body>
+  </html>
