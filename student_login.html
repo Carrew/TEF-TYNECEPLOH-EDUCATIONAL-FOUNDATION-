@@ -2,69 +2,70 @@
 <html>
 <head>
   <title>Student Login</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
       font-family: Arial, sans-serif;
-      padding: 20px;
       max-width: 400px;
-      margin: 60px auto;
-      background-color: #f0f0f0;
-    }
-    h2 {
-      text-align: center;
-      color: #333;
+      margin: 50px auto;
+      padding: 20px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
     }
     input, button {
       width: 100%;
-      padding: 10px;
-      margin: 10px 0;
+      padding: 12px;
+      margin-top: 10px;
       box-sizing: border-box;
+      font-size: 16px;
     }
-    #error {
+    #message {
+      margin-top: 20px;
       color: red;
-      text-align: center;
+      font-weight: bold;
     }
   </style>
 </head>
 <body>
   <h2>Student Login</h2>
-  <input type="text" id="studentId" placeholder="Enter Student ID (e.g., TEF2025-0001)">
-  <input type="password" id="pin" placeholder="Enter PIN">
+  <input type="text" id="userId" placeholder="Enter Student ID (e.g. TEF2025-0001)" required>
+  <input type="password" id="pin" placeholder="Enter PIN" required>
   <button onclick="login()">Login</button>
-  <div id="error"></div>
+  <div id="message"></div>
 
   <script>
     async function login() {
-      const studentId = document.getElementById('studentId').value.trim();
+      const userId = document.getElementById('userId').value.trim();
       const pin = document.getElementById('pin').value.trim();
-      const errorDiv = document.getElementById('error');
-      errorDiv.textContent = '';
+      const message = document.getElementById('message');
 
-      if (!studentId || !pin) {
-        errorDiv.textContent = "Please enter both ID and PIN.";
+      if (!userId || !pin) {
+        message.innerText = 'Both fields are required.';
         return;
       }
 
-      const url = `https://script.google.com/macros/s/AKfycbyv0XAPQGzY5NOT4SUe-FuNXkrkbmMQjUipdAGBgJaCaTzECAshhTs1Fr7qJ5QZ1ax3jw/exec?userId=${encodeURIComponent(studentId)}&pin=${encodeURIComponent(pin)}`;
+      const url = `https://script.google.com/macros/s/AKfycbyv0XAPQGzY5NOT4SUe-FuNXkrkbmMQjUipdAGBgJaCaTzECAshhTs1Fr7qJ5QZ1ax3jw/exec?userId=${encodeURIComponent(userId)}&pin=${encodeURIComponent(pin)}`;
+
+      message.innerText = 'Logging in...';
 
       try {
         const res = await fetch(url);
         const data = await res.json();
 
         if (data.success) {
-          // Save login data in localStorage if needed
-          localStorage.setItem("studentId", studentId);
-          localStorage.setItem("studentName", data.name);
-
-          // Redirect to dashboard
-          window.location.href = "student_dashboard.html";
+          message.style.color = 'green';
+          message.innerText = `Welcome ${data.name}`;
+          // Redirect or show dashboard after a delay
+          setTimeout(() => {
+            window.location.href = "student_dashboard.html?userId=" + encodeURIComponent(userId);
+          }, 1000);
         } else {
-          errorDiv.textContent = "Invalid ID or PIN.";
+          message.style.color = 'red';
+          message.innerText = data.message;
         }
-      } catch (err) {
-        errorDiv.textContent = "Network or server error. Try again.";
-        console.error(err);
+      } catch (error) {
+        message.innerText = "Network error or invalid response";
+        console.error(error);
       }
     }
   </script>
