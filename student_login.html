@@ -1,70 +1,138 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
   <title>Student Login</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      max-width: 400px;
-      margin: 50px auto;
-      padding: 20px;
-      border: 1px solid #ddd;
-      border-radius: 10px;
-    }
-    input, button {
-      width: 100%;
-      padding: 12px;
-      margin-top: 10px;
+    * {
       box-sizing: border-box;
-      font-size: 16px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
-    #message {
-      margin-top: 20px;
-      color: red;
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .login-container {
+      background: #ffffff;
+      padding: 40px 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 400px;
+    }
+
+    h2 {
+      text-align: center;
+      color: #1976d2;
+      margin-bottom: 20px;
+    }
+
+    label {
       font-weight: bold;
+      color: #333;
+      display: block;
+      margin-top: 10px;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0 20px 0;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 15px;
+    }
+
+    button {
+      width: 100%;
+      background-color: #1976d2;
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    button:hover {
+      background-color: #0d47a1;
+    }
+
+    #result {
+      text-align: center;
+      margin-top: 15px;
+      font-size: 15px;
+    }
+
+    @media (max-width: 480px) {
+      .login-container {
+        padding: 30px 20px;
+      }
     }
   </style>
 </head>
 <body>
-  <h2>Student Login</h2>
-  <input type="text" id="userId" placeholder="Enter Student ID (e.g. TEF2025-0001)" required>
-  <input type="password" id="pin" placeholder="Enter PIN" required>
-  <button onclick="login()">Login</button>
-  <div id="message"></div>
+  <div class="login-container">
+    <h2>Student Login</h2>
+
+    <label for="userId">Student ID</label>
+    <input type="text" id="userId" placeholder="Enter your Student ID">
+
+    <label for="pin">PIN</label>
+    <input type="password" id="pin" placeholder="Enter your PIN">
+
+    <button onclick="login()">Login</button>
+    <p id="result"></p>
+  </div>
 
   <script>
     async function login() {
       const userId = document.getElementById('userId').value.trim();
       const pin = document.getElementById('pin').value.trim();
-      const message = document.getElementById('message');
+      const result = document.getElementById('result');
 
       if (!userId || !pin) {
-        message.innerText = 'Both fields are required.';
+        result.style.color = 'red';
+        result.textContent = 'Please enter both Student ID and PIN.';
         return;
       }
 
-      const url = `https://script.google.com/macros/s/AKfycbyv0XAPQGzY5NOT4SUe-FuNXkrkbmMQjUipdAGBgJaCaTzECAshhTs1Fr7qJ5QZ1ax3jw/exec?userId=${encodeURIComponent(userId)}&pin=${encodeURIComponent(pin)}`;
+      const url = 'https://script.google.com/macros/s/AKfycbw9P_XOd4k498l0e4WDbFqAF1asb2u4sRj_uX2B-2S1MvyWOeWQZqxy8dr13mPOdNOeuw/exec';
 
-      message.innerText = 'Logging in...';
+      const formData = new URLSearchParams();
+      formData.append('role', 'student');
+      formData.append('id', userId);
+      formData.append('pin', pin);
 
       try {
-        const res = await fetch(url);
-        const data = await res.json();
+        const response = await fetch(url, {
+          method: 'POST',
+          body: formData
+        });
+        const data = await response.json();
 
         if (data.success) {
-          message.style.color = 'green';
-          message.innerText = `Welcome ${data.name}`;
-          // Redirect or show dashboard after a delay
+          result.style.color = 'green';
+          result.textContent = `Login successful! Welcome, ${data.name}`;
           setTimeout(() => {
-            window.location.href = "student_dashboard.html?userId=" + encodeURIComponent(userId);
+            window.location.href = 'student_dashboard.html?userId=' + encodeURIComponent(userId);
           }, 1000);
         } else {
-          message.style.color = 'red';
-          message.innerText = data.message;
+          result.style.color = 'red';
+          result.textContent = data.message;
         }
       } catch (error) {
-        message.innerText = "Network error or invalid response";
+        result.style.color = 'red';
+        result.textContent = 'Network error or server issue.';
         console.error(error);
       }
     }
