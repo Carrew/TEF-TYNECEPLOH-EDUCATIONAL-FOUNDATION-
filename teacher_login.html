@@ -1,156 +1,110 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Teacher Login | Tyneceploh Educational Foundation</title>
+  <meta charset="UTF-8">
+  <title>Teacher Login - Tyneceploh</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
-
     body {
-      margin: 0;
-      font-family: 'Poppins', sans-serif;
-      background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f9f1f5;
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
-      padding: 20px;
-      box-sizing: border-box;
     }
 
-    .login-container {
-      background: white;
-      max-width: 400px;
-      width: 100%;
-      padding: 40px 30px;
-      border-radius: 15px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-      text-align: center;
+    .login-box {
+      background-color: #fff;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      width: 320px;
     }
 
     h2 {
-      margin-bottom: 25px;
-      font-weight: 600;
-      color: #2c3e50;
+      text-align: center;
+      color: #880e4f; /* Deep Maroon */
+      margin-bottom: 20px;
     }
 
-    label {
-      display: block;
-      text-align: left;
-      font-weight: 600;
-      margin-bottom: 8px;
-      color: #34495e;
-      font-size: 14px;
-    }
-
-    input[type="text"],
-    input[type="password"] {
+    input {
       width: 100%;
-      padding: 14px 15px;
-      margin-bottom: 25px;
-      border: 1.8px solid #d1d8e0;
-      border-radius: 10px;
-      font-size: 16px;
-      transition: border-color 0.3s;
-    }
-
-    input[type="text"]:focus,
-    input[type="password"]:focus {
-      border-color: #2980b9;
-      outline: none;
-      box-shadow: 0 0 8px rgba(41, 128, 185, 0.3);
+      padding: 12px;
+      margin: 10px 0;
+      border-radius: 8px;
+      border: 1px solid #ccc;
     }
 
     button {
       width: 100%;
-      background-color: #2980b9;
+      padding: 12px;
+      background-color: #c2185b; /* Bright Pink */
+      color: #fff;
+      font-weight: bold;
       border: none;
-      padding: 15px;
-      border-radius: 10px;
-      color: white;
-      font-weight: 700;
-      font-size: 17px;
+      border-radius: 8px;
       cursor: pointer;
-      transition: background-color 0.3s;
-      box-shadow: 0 5px 10px rgba(41, 128, 185, 0.4);
     }
 
     button:hover {
-      background-color: #1f6391;
+      background-color: #ad1457;
     }
 
-    #message {
-      margin-top: 15px;
-      font-size: 15px;
-      color: #e74c3c;
-      min-height: 20px;
-      font-weight: 600;
-    }
-
-    @media (max-width: 450px) {
-      .login-container {
-        padding: 30px 20px;
-      }
+    .message {
+      margin-top: 12px;
+      text-align: center;
+      font-size: 14px;
     }
   </style>
 </head>
 <body>
-  <div class="login-container">
+
+  <div class="login-box">
     <h2>Teacher Login</h2>
-    <form id="loginForm" autocomplete="off">
-      <label for="userId">Teacher ID</label>
-      <input type="text" id="userId" name="userId" placeholder="e.g. TEF-T001" required />
-
-      <label for="pin">PIN</label>
-      <input type="password" id="pin" name="pin" placeholder="4-digit PIN" required />
-
-      <button type="submit">Login</button>
-    </form>
-
-    <div id="message"></div>
+    <input type="text" id="name" placeholder="Enter Name">
+    <input type="password" id="pin" placeholder="Enter PIN">
+    <button onclick="teacherLogin()">Login</button>
+    <div class="message" id="message"></div>
   </div>
 
   <script>
-    const backendURL = 'https://script.google.com/macros/s/AKfycbzUWtGTKFviAGwhOvjJjjDOUGHn9U-L3XpfqjWYlxs6PzXIcypX8kwwA0tN6EmAgum9/exec';
+    function teacherLogin() {
+      const name = document.getElementById("name").value.trim();
+      const pin = document.getElementById("pin").value.trim();
+      const message = document.getElementById("message");
 
-    document.getElementById('loginForm').onsubmit = function(e) {
-      e.preventDefault();
-      const userId = document.getElementById('userId').value.trim();
-      const pin = document.getElementById('pin').value.trim();
-
-      if (!userId || !pin) {
-        showMessage('Please enter both Teacher ID and PIN');
+      if (!name || !pin) {
+        message.innerText = "Please fill in all fields.";
+        message.style.color = "red";
         return;
       }
 
-      const callbackName = 'jsonpCallback_' + Math.floor(Math.random() * 100000);
-      window[callbackName] = function(response) {
-        delete window[callbackName];
-        document.body.removeChild(script);
-
-        if (response.success) {
-          window.location.href = 'teacher_dashboard.html?teacherId=' + encodeURIComponent(userId);
+      fetch("https://script.google.com/macros/s/AKfycbw9P_XOd4k498l0e4WDbFqAF1asb2u4sRj_uX2B-2S1MvyWOeWQZqxy8dr13mPOdNOeuw/exec", {
+        method: "POST",
+        body: new URLSearchParams({
+          role: "teacher",
+          id: name,
+          pin: pin
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          message.innerText = "Welcome, " + data.name + "!";
+          message.style.color = "green";
+          // Redirect to dashboard
+          window.location.href = "teacher_dashboard.html";
         } else {
-          showMessage(response.message || 'Login failed');
+          message.innerText = data.message;
+          message.style.color = "red";
         }
-      };
-
-      const url = `${backendURL}?callback=${callbackName}&action=login&role=teacher&userId=${encodeURIComponent(userId)}&pin=${encodeURIComponent(pin)}`;
-
-      const script = document.createElement('script');
-      script.src = url;
-      script.onerror = function() {
-        showMessage('Network error or backend not reachable');
-        delete window[callbackName];
-        document.body.removeChild(script);
-      };
-      document.body.appendChild(script);
-    };
-
-    function showMessage(msg) {
-      document.getElementById('message').textContent = msg;
+      })
+      .catch(error => {
+        message.innerText = "Network error. Try again.";
+        message.style.color = "red";
+      });
     }
   </script>
+
 </body>
 </html>
