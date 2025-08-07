@@ -1,64 +1,189 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Student Dashboard</title>
   <meta charset="UTF-8">
-</head>
-<body>
-  <h2>Welcome to Your Dashboard</h2>
-  <div id="result"></div>
-  <button onclick="logout()">Logout</button>
-
-  <script>
-    const apiUrl = "https://script.google.com/macros/s/AKfycbxD4I6gTNaDa-HgtZQazLP2hZDOa-yEcyt0IBkJNJ008xMu6aDx3Gw0TuY-MgHv83qO/exec";
-
-    // Get StudentID and PIN from localStorage
-    const studentId = localStorage.getItem("studentId");
-    const pin = localStorage.getItem("pin");
-
-    // Check if user is logged in
-    if (!studentId || !pin) {
-      alert("Access Denied or Not Logged In");
-      window.location.href = "login.html";
-    } else {
-      // Fetch results
-      fetch(apiUrl + "?action=fetchResults&StudentID=" + studentId + "&pin=" + pin)
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            displayResults(data.results);
-          } else {
-            document.getElementById("result").innerHTML = "Error: " + data.message;
-          }
-        })
-        .catch(error => {
-          document.getElementById("result").innerHTML = "Failed to fetch results.";
-          console.error(error);
-        });
+  <title>Student Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: #f0f4f8;
     }
 
-    function displayResults(results) {
-      let output = "<h3>Your Results</h3><table border='1' cellpadding='6'><tr>";
-      for (let key in results[0]) {
-        output += `<th>${key}</th>`;
-      }
-      output += "</tr>";
-      results.forEach(row => {
-        output += "<tr>";
-        for (let key in row) {
-          output += `<td>${row[key]}</td>`;
+    h2 {
+      color: #333;
+    }
+
+    #filterContainer {
+      margin-bottom: 20px;
+    }
+
+    select {
+      padding: 6px;
+      font-size: 14px;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      background-color: #fff;
+    }
+
+    th, td {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: center;
+    }
+
+    th {
+      background-color: #1976d2;
+      color: white;
+    }
+
+    .red {
+      color: red;
+      font-weight: bold;
+    }
+
+    .blue {
+      color: blue;
+      font-weight: bold;
+    }
+
+    #averageScore {
+      margin-top: 15px;
+      font-size: 16px;
+      font-weight: bold;
+    }
+
+    #logoutBtn {
+      margin-top: 20px;
+      background: #c62828;
+      color: white;
+      padding: 10px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Welcome, Student</h2>
+
+  <div id="filterContainer">
+    <label for="periodFilter">Filter by Period: </label>
+    <select id="periodFilter">
+      <option value="All">All</option>
+    </select>
+  </div>
+
+  <table id="gradesTable">
+    <thead>
+      <tr>
+        <th>Subject</th>
+        <th>Score</th>
+        <th>Period</th>
+        <th>Teacher</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <div id="averageScore"></div>
+  <button id="logoutBtn" onclick="logout()">Logout</button>
+
+  <script>
+    const API_URL = 'https://script.google.com/macros/s/AKfycbw9P_XOd4k498l0e4WDbFqAF1asb2u4sRj_uX2B-2S1MvyWOeWQZqxy8dr13mPOdNOeuw/exec';
+    const studentId = localStorage.getItem("studentId");
+
+    if (!studentId) {
+      alert("Access Denied. Please login.");
+      window.location.href = "login.html";
+    }
+
+    let gradesData = [];
+
+    async function fetchGrades() {
+      try {
+        const res = await fetch(`${API_URL}?action=getApprovedGrades&studentId=${encodeURIComponent(studentId)}`);
+        const data = await res.json();
+
+        if (data.success) {
+          gradesData = data.grades;
+          populatePeriodFilter();
+          renderTable("All");
+        } else {
+          alert("Error: " + data.message);
         }
-        output += "</tr>";
+      } catch (err) {
+        alert("Failed to fetch grades.");
+        console.error(err);
+      }
+    }
+
+    function populatePeriodFilter() {
+      const periodSet = new Set(gradesData.map(g => g.Period.trim()));
+      const filter = document.getElementById("periodFilter");
+
+      periodSet.forEach(period => {
+        const opt = document.createElement("option");
+        opt.value = period;
+        opt.textContent = period;
+        filter.appendChild(opt);
       });
-      output += "</table>";
-      document.getElementById("result").innerHTML = output;
+
+      filter.addEventListener("change", () => {
+        renderTable(filter.value);
+      });
+    }
+
+    function renderTable(period) {
+      const tbody = document.querySelector("#gradesTable tbody");
+      tbody.innerHTML = "";
+
+      const filtered = period === "All" ? gradesData : gradesData.filter(g => g.Period.trim() === period);
+      let total = 0;
+
+      filtered.forEach(grade => {
+        const tr = document.createElement("tr");
+
+        const subject = document.createElement("td");
+        subject.textContent = grade.Subject;
+
+        const score = document.createElement("td");
+        score.textContent = grade.Score;
+        score.className = grade.Score < 70 ? "red" : "blue";
+
+        const periodCell = document.createElement("td");
+        periodCell.textContent = grade.Period;
+
+        const teacher = document.createElement("td");
+        teacher.textContent = grade.TeacherID;
+
+        tr.appendChild(subject);
+        tr.appendChild(score);
+        tr.appendChild(periodCell);
+        tr.appendChild(teacher);
+
+        tbody.appendChild(tr);
+
+        total += parseFloat(grade.Score);
+      });
+
+      const avg = filtered.length > 0 ? (total / filtered.length).toFixed(2) : "N/A";
+      document.getElementById("averageScore").textContent = `Average Score: ${avg}`;
     }
 
     function logout() {
-      localStorage.removeItem("studentId");
-      localStorage.removeItem("pin");
+      localStorage.clear();
       window.location.href = "login.html";
     }
+
+    // Initial load
+    fetchGrades();
   </script>
+
 </body>
 </html>
