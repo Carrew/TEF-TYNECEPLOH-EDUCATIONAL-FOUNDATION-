@@ -1,153 +1,165 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Student Results</title>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Student Dashboard</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #f9f9f9;
+      background-color: #f5f5f5;
       padding: 20px;
     }
-    h2 {
+    h1 {
       color: #444;
-    }
-    #resultsTable {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-    }
-    #resultsTable th, #resultsTable td {
-      border: 1px solid #ccc;
-      padding: 8px;
-      text-align: center;
-    }
-    #resultsTable th {
-      background-color: #f2f2f2;
-    }
-    .red {
-      color: red;
-      font-weight: bold;
-    }
-    .blue {
-      color: blue;
-      font-weight: bold;
-    }
-    #averageScore {
-      margin-top: 15px;
-      font-weight: bold;
     }
     select {
       padding: 5px;
-      margin-bottom: 10px;
+      margin-bottom: 15px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: #fff;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid #ddd;
+      text-align: left;
+    }
+    th {
+      background-color: #eee;
+    }
+    .score-low {
+      color: red;
+    }
+    .score-high {
+      color: blue;
+    }
+    .error {
+      color: red;
+      font-weight: bold;
     }
   </style>
 </head>
 <body>
+  <h1>Welcome, Student</h1>
 
-  <h2>Welcome, <span id="studentName"></span></h2>
-  
-  <label for="periodFilter">Filter by Period:</label>
-  <select id="periodFilter">
-    <option value="All">All Periods</option>
+  <label for="periodSelect">Filter by Period:</label>
+  <select id="periodSelect">
+    <option value="All">All</option>
+    <option value="1st Period">1st Period</option>
+    <option value="2nd Period">2nd Period</option>
+    <option value="3rd Period">3rd Period</option>
+    <option value="4th Period">4th Period</option>
+    <option value="5th Period">5th Period</option>
+    <option value="6th Period">6th Period</option>
+    <option value="Semester Exam">Semester Exam</option>
+    <option value="Final Exam">Final Exam</option>
   </select>
 
-  <table id="resultsTable">
+  <div id="error" class="error"></div>
+
+  <table id="gradesTable" style="display:none">
     <thead>
       <tr>
         <th>Subject</th>
         <th>Score</th>
         <th>Period</th>
+        <th>Teacher</th>
       </tr>
     </thead>
-    <tbody id="resultsBody"></tbody>
+    <tbody></tbody>
+    <tfoot>
+      <tr>
+        <td><strong>Average</strong></td>
+        <td colspan="3" id="averageCell">-</td>
+      </tr>
+    </tfoot>
   </table>
 
-  <div id="averageScore"></div>
-
   <script>
-    const studentId = localStorage.getItem("studentId");
-    const studentName = localStorage.getItem("studentName");
+    const urlParams = new URLSearchParams(window.location.search);
+    const studentId = urlParams.get("studentId");
     const apiUrl = "https://script.google.com/macros/s/AKfycbxD4I6gTNaDa-HgtZQazLP2hZDOa-yEcyt0IBkJNJ008xMu6aDx3Gw0TuY-MgHv83qO/exec";
 
-    document.getElementById("studentName").innerText = studentName || "";
-
-    if (!studentId) {
-      alert("Student ID missing. Please log in again.");
-      window.location.href = "student_login.html";
-    }
+    const errorDiv = document.getElementById("error");
+    const table = document.getElementById("gradesTable");
+    const tbody = table.querySelector("tbody");
+    const averageCell = document.getElementById("averageCell");
+    const periodSelect = document.getElementById("periodSelect");
 
     let allGrades = [];
 
     function fetchGrades() {
+      if (!studentId) {
+        errorDiv.textContent = "Missing student ID.";
+        return;
+      }
+
       fetch(`${apiUrl}?studentId=${studentId}`)
         .then(res => res.json())
         .then(data => {
-          if (data.success) {
-            allGrades = data.grades;
-            populateDropdown(allGrades);
-            displayGrades(allGrades);
+          if (data.success && Array.isArray(data.grades)) {
+            allGrades = data.grades.filter(g => g.Status === "Approved");
+            renderTable("All");
           } else {
-            alert("No grades found.");
+            errorDiv.textContent = "No approved grades found.";
           }
         })
-        .catch(err => {
-          console.error("Fetch error", err);
-          alert("Error fetching results.");
+        .catch(() => {
+          errorDiv.textContent = "Error fetching results.";
         });
     }
 
-    function populateDropdown(grades) {
-      const dropdown = document.getElementById("periodFilter");
-      const periods = [...new Set(grades.map(g => g.Period.trim()))];
-
-      periods.forEach(p => {
-        const option = document.createElement("option");
-        option.value = p;
-        option.textContent = p;
-        dropdown.appendChild(option);
-      });
-
-      dropdown.addEventListener("change", () => {
-        const selected = dropdown.value;
-        const filtered = selected === "All" ? allGrades : allGrades.filter(g => g.Period.trim() === selected);
-        displayGrades(filtered);
-      });
-    }
-
-    function displayGrades(grades) {
-      const tbody = document.getElementById("resultsBody");
+    function renderTable(selectedPeriod) {
       tbody.innerHTML = "";
+      let filtered = selectedPeriod === "All"
+        ? allGrades
+        : allGrades.filter(g => g.Period.trim() === selectedPeriod);
+
+      if (filtered.length === 0) {
+        table.style.display = "none";
+        averageCell.textContent = "-";
+        return;
+      }
 
       let total = 0;
 
-      grades.forEach(grade => {
+      filtered.forEach(g => {
         const row = document.createElement("tr");
 
-        const subject = document.createElement("td");
-        subject.textContent = grade.Subject;
+        const subjectCell = document.createElement("td");
+        subjectCell.textContent = g.Subject;
+        row.appendChild(subjectCell);
 
-        const score = document.createElement("td");
-        score.textContent = grade.Score;
-        score.className = grade.Score >= 70 ? "blue" : "red";
+        const scoreCell = document.createElement("td");
+        scoreCell.textContent = g.Score;
+        scoreCell.className = g.Score >= 70 ? "score-high" : "score-low";
+        row.appendChild(scoreCell);
 
-        const period = document.createElement("td");
-        period.textContent = grade.Period.trim();
+        const periodCell = document.createElement("td");
+        periodCell.textContent = g.Period.trim();
+        row.appendChild(periodCell);
 
-        row.appendChild(subject);
-        row.appendChild(score);
-        row.appendChild(period);
+        const teacherCell = document.createElement("td");
+        teacherCell.textContent = g.TeacherID;
+        row.appendChild(teacherCell);
+
         tbody.appendChild(row);
-
-        total += Number(grade.Score);
+        total += Number(g.Score);
       });
 
-      const average = grades.length > 0 ? (total / grades.length).toFixed(2) : 0;
-      document.getElementById("averageScore").textContent = `Average Score: ${average}`;
+      const avg = (total / filtered.length).toFixed(2);
+      averageCell.textContent = avg;
+      table.style.display = "table";
     }
 
-    window.onload = fetchGrades;
-  </script>
+    periodSelect.addEventListener("change", () => {
+      renderTable(periodSelect.value);
+    });
 
+    fetchGrades();
+  </script>
 </body>
 </html>
