@@ -2,44 +2,62 @@
 <html>
 <head>
   <title>Student Dashboard</title>
-  <style>
-    body { font-family: Arial; padding: 20px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    th, td { border: 1px solid #aaa; padding: 8px; text-align: center; }
-  </style>
+  <meta charset="UTF-8">
 </head>
 <body>
-  <h2>Welcome, <span id="student-name">Loading...</span></h2>
-  <table id="results-table">
-    <tr><th>Subject</th><th>Score</th></tr>
-  </table>
+  <h2>Welcome to Your Dashboard</h2>
+  <div id="result"></div>
+  <button onclick="logout()">Logout</button>
 
   <script>
-    const studentId = localStorage.getItem("studentId");
+    const apiUrl = "https://script.google.com/macros/s/AKfycbxD4I6gTNaDa-HgtZQazLP2hZDOa-yEcyt0IBkJNJ008xMu6aDx3Gw0TuY-MgHv83qO/exec";
 
-    if (!studentId) {
-      document.body.innerHTML = "<h2>Access Denied or Not Logged In</h2>";
+    // Get StudentID and PIN from localStorage
+    const studentId = localStorage.getItem("studentId");
+    const pin = localStorage.getItem("pin");
+
+    // Check if user is logged in
+    if (!studentId || !pin) {
+      alert("Access Denied or Not Logged In");
+      window.location.href = "login.html";
     } else {
-      fetch(`https://script.google.com/macros/s/YOUR_DEPLOYED_SCRIPT_URL/exec?id=${studentId}&role=student`)
-        .then(response => response.json())
+      // Fetch results
+      fetch(apiUrl + "?action=fetchResults&StudentID=" + studentId + "&pin=" + pin)
+        .then(res => res.json())
         .then(data => {
           if (data.success) {
-            document.getElementById("student-name").textContent = data.name;
-            const resultsTable = document.getElementById("results-table");
-            resultsTable.innerHTML = "<tr><th>Subject</th><th>Score</th></tr>";
-            data.grades.forEach(grade => {
-              const row = document.createElement("tr");
-              row.innerHTML = `<td>${grade.subject}</td><td>${grade.score}</td>`;
-              resultsTable.appendChild(row);
-            });
+            displayResults(data.results);
           } else {
-            document.body.innerHTML = `<h2>Failed to fetch results: ${data.message}</h2>`;
+            document.getElementById("result").innerHTML = "Error: " + data.message;
           }
         })
         .catch(error => {
-          console.error("Error fetching results:", error);
-          document.body.innerHTML = `<h2>Error fetching results</h2>`;
+          document.getElementById("result").innerHTML = "Failed to fetch results.";
+          console.error(error);
         });
+    }
+
+    function displayResults(results) {
+      let output = "<h3>Your Results</h3><table border='1' cellpadding='6'><tr>";
+      for (let key in results[0]) {
+        output += `<th>${key}</th>`;
+      }
+      output += "</tr>";
+      results.forEach(row => {
+        output += "<tr>";
+        for (let key in row) {
+          output += `<td>${row[key]}</td>`;
+        }
+        output += "</tr>";
+      });
+      output += "</table>";
+      document.getElementById("result").innerHTML = output;
+    }
+
+    function logout() {
+      localStorage.removeItem("studentId");
+      localStorage.removeItem("pin");
+      window.location.href = "login.html";
     }
   </script>
 </body>
