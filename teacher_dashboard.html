@@ -1,1 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Teacher Dashboard</title>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    table, th, td { border: 1px solid black; border-collapse: collapse; padding: 5px; }
+    .pending { background-color: yellow; }
+    .approved { background-color: lightgreen; }
+    .rejected { background-color: #f99; }
+  </style>
+</head>
+<body>
+  <h2>Welcome, <span id="teacherIdDisplay"></span></h2>
+  <button onclick="logout()">Logout</button>
 
+  <h3>Submit New Grade</h3>
+  <form id="gradeForm">
+    Student ID: <input type="text" id="studentId" required><br>
+    Subject: <input type="text" id="subject" required><br>
+    Score: <input type="number" id="score" required><br>
+    Period: 
+    <select id="period" required>
+      <option>1st Period</option>
+      <option>2nd Period</option>
+      <option>3rd Period</option>
+      <option>Semester Exam</option>
+      <option>4th Period</option>
+      <option>5th Period</option>
+      <option>6th Period</option>
+      <option>Final Exam</option>
+    </select><br>
+    <button type="submit">Submit Grade</button>
+  </form>
+
+  <h3>Your Submitted Grades</h3>
+  <table id="gradesTable">
+    <thead>
+      <tr>
+        <th>Student ID</th>
+        <th>Subject</th>
+        <th>Score</th>
+        <th>Period</th>
+        <th>Status</th>
+        <th>Reject Reason</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    const TEACHER_ID = localStorage.getItem("TeacherID");
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw9P_XOd4k498l0e4WDbFqAF1asb2u4sRj_uX2B-2S1MvyWOeWQZqxy8dr13mPOdNOeuw/exec";
+
+    document.getElementById("teacherIdDisplay").textContent = TEACHER_ID;
+
+    if (!TEACHER_ID) {
+      alert("Access denied. Please log in.");
+      window.location.href = "teacher_login.html"; // Your login page
+    }
+
+    document.getElementById("gradeForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const data = {
+        action: "submitGrade",
+        studentId: document.getElementById("studentId").value,
+        subject: document.getElementById("subject").value,
+        score: document.getElementById("score").value,
+        period: document.getElementById("period").value,
+        teacherId: TEACHER_ID
+      };
+
+      const response = await fetch(SCRIPT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+
+      const result = await response.json();
+      alert(result.message || "Grade submitted");
+      loadGrades();
+    });
+
+    async function loadGrades() {
+      const res = await fetch(`${SCRIPT_URL}?action=getTeacherGrades&teacherId=${TEACHER_ID}`);
+      const data = await res.json();
+
+      const tbody = document.querySelector("#gradesTable tbody");
+      tbody.innerHTML = "";
+
+      if (data.success && data.grades.length > 0) {
+        data.grades.forEach(g => {
+          const tr = document.createElement("tr");
+          tr.className = g.Status.toLowerCase();
+
+          tr.innerHTML = `
+            <td>${g.StudentID}</td>
+            <td>${g.Subject}</td>
+            <td>${g.Score}</td>
+            <td>${g.Period}</td>
+            <td>${g.Status}</td>
+            <td>${g.RejectReason || ""}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } else {
+        tbody.innerHTML = `<tr><td colspan="6">No grades found</td></tr>`;
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem("TeacherID");
+      window.location.href = "teacher_login.html";
+    }
+
+    window.onload = loadGrades;
+  </script>
+</body>
+  </html>
