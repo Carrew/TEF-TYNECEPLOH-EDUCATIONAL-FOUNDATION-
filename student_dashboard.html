@@ -3,121 +3,145 @@
 <head>
   <title>Student Dashboard</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; }
-    #dashboard { display: none; }
+    body { font-family: Arial, sans-serif; padding: 20px; background: #f0f0f0; }
+    .hidden { display: none; }
+    .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 10px; }
+    select, input, button { width: 100%; padding: 10px; margin: 10px 0; }
     table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-    select { padding: 6px; margin-top: 10px; }
+    th, td { border: 1px solid #ccc; padding: 10px; text-align: center; }
   </style>
 </head>
 <body>
 
-  <!-- Login Page -->
-  <div id="loginPage">
+<div class="container">
+  <div id="loginPanel">
     <h2>Student Login</h2>
-    <input type="text" id="studentId" placeholder="Student ID"><br><br>
-    <input type="password" id="pin" placeholder="PIN"><br><br>
-    <button onclick="loginStudent()">Login</button>
-    <p id="loginMessage" style="color:red;"></p>
+    <input type="text" id="studentId" placeholder="Enter your Student ID" />
+    <input type="password" id="pin" placeholder="Enter your PIN" />
+    <button onclick="login()">Login</button>
+    <p id="loginError" style="color:red;"></p>
   </div>
 
-  <!-- Dashboard -->
-  <div id="dashboard">
-    <h2>Welcome Student</h2>
-    <label for="periodSelect">Select Period:</label>
-    <select id="periodSelect" onchange="filterResults()">
+  <div id="dashboardPanel" class="hidden">
+    <h2>Welcome, <span id="studentName"></span></h2>
+
+    <label>Filter by Period:</label>
+    <select id="periodFilter" onchange="displayGrades()">
       <option value="">All Periods</option>
       <option value="1st Period">1st Period</option>
       <option value="2nd Period">2nd Period</option>
       <option value="3rd Period">3rd Period</option>
+      <option value="Semester Exam">Semester Exam</option>
       <option value="4th Period">4th Period</option>
       <option value="5th Period">5th Period</option>
       <option value="6th Period">6th Period</option>
-      <option value="Semester Exam">Semester Exam</option>
       <option value="Final Exam">Final Exam</option>
     </select>
 
-    <table id="resultsTable">
+    <table id="gradesTable">
       <thead>
         <tr>
           <th>Subject</th>
           <th>Score</th>
           <th>Period</th>
+          <th>Status</th>
+          <th>Reject Reason</th>
         </tr>
       </thead>
       <tbody></tbody>
     </table>
   </div>
+</div>
 
-  <script>
-    let studentIdGlobal = "";
-    let allGrades = [];
+<script>
+const scriptURL = "https://script.google.com/macros/s/AKfycbxD4I6gTNaDa-HgtZQazLP2hZDOa-yEcyt0IBkJNJ008xMu6aDx3Gw0TuY-MgHv83qO/exec";
 
-    function loginStudent() {
-      const studentId = document.getElementById("studentId").value.trim();
-      const pin = document.getElementById("pin").value.trim();
-      const loginMsg = document.getElementById("loginMessage");
+window.onload = function () {
+  const studentId = localStorage.getItem("studentId");
+  const studentName = localStorage.getItem("studentName");
 
-      if (!studentId || !pin) {
-        loginMsg.innerText = "Please enter Student ID and PIN.";
-        return;
-      }
+  if (studentId) {
+    document.getElementById("loginPanel").classList.add("hidden");
+    document.getElementById("dashboardPanel").classList.remove("hidden");
+    document.getElementById("studentName").textContent = studentName || studentId;
+    fetchGrades(studentId);
+  }
+};
 
-      const url = "https://script.google.com/macros/s/AKfycbxD4I6gTNaDa-HgtZQazLP2hZDOa-yEcyt0IBkJNJ008xMu6aDx3Gw0TuY-MgHv83qO/exec";
-      fetch(`${url}?userId=${studentId}&pin=${pin}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            studentIdGlobal = data.studentId;
-            document.getElementById("loginPage").style.display = "none";
-            document.getElementById("dashboard").style.display = "block";
-            loadGrades(studentIdGlobal);
-          } else {
-            loginMsg.innerText = "Login failed. Please check your ID and PIN.";
-          }
-        })
-        .catch(err => {
-          loginMsg.innerText = "Error connecting to server.";
-        });
-    }
+function login() {
+  const id = document.getElementById("studentId").value.trim();
+  const pin = document.getElementById("pin").value.trim();
 
-    function loadGrades(studentId) {
-      const url = "https://script.google.com/macros/s/AKfycbyv0XAPQGzY5NOT4SUe-FuNXkrkbmMQjUip/exec";
-      fetch(`${url}?studentId=${studentId}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.success && data.grades) {
-            allGrades = data.grades.filter(g => g.Status === "Approved");
-            displayResults(allGrades);
-          } else {
-            alert("Error fetching results.");
-          }
-        })
-        .catch(() => alert("Failed to connect to server."));
-    }
+  if (!id || !pin) {
+    document.getElementById("loginError").textContent = "Please enter ID and PIN.";
+    return;
+  }
 
-    function displayResults(grades) {
-      const tableBody = document.getElementById("resultsTable").getElementsByTagName("tbody")[0];
-      tableBody.innerHTML = "";
-
-      grades.forEach(g => {
-        const row = tableBody.insertRow();
-        row.insertCell(0).innerText = g.Subject;
-        row.insertCell(1).innerText = g.Score;
-        row.insertCell(2).innerText = g.Period;
-      });
-    }
-
-    function filterResults() {
-      const period = document.getElementById("periodSelect").value;
-      if (!period) {
-        displayResults(allGrades);
+  fetch(`${scriptURL}?userId=${id}&pin=${pin}`)
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        localStorage.setItem("studentId", data.studentId);
+        localStorage.setItem("studentName", data.name || data.studentId);
+        document.getElementById("studentName").textContent = data.name || data.studentId;
+        document.getElementById("loginPanel").classList.add("hidden");
+        document.getElementById("dashboardPanel").classList.remove("hidden");
+        fetchGrades(data.studentId);
       } else {
-        const filtered = allGrades.filter(g => g.Period === period);
-        displayResults(filtered);
+        document.getElementById("loginError").textContent = "Invalid ID or PIN.";
       }
-    }
-  </script>
+    })
+    .catch(error => {
+      console.error("Login error:", error);
+      document.getElementById("loginError").textContent = "Network error.";
+    });
+}
+
+let grades = [];
+
+function fetchGrades(studentId) {
+  fetch(`${scriptURL}?studentId=${studentId}`)
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        grades = data.grades || [];
+        displayGrades();
+      } else {
+        alert("Error fetching results.");
+      }
+    })
+    .catch(error => {
+      console.error("Fetch error:", error);
+      alert("Error fetching results.");
+    });
+}
+
+function displayGrades() {
+  const tbody = document.querySelector("#gradesTable tbody");
+  tbody.innerHTML = "";
+
+  const selectedPeriod = document.getElementById("periodFilter").value;
+
+  const filteredGrades = grades.filter(g => !selectedPeriod || g.Period.trim() === selectedPeriod.trim());
+
+  if (filteredGrades.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5">No results found for this period.</td></tr>`;
+    return;
+  }
+
+  filteredGrades.forEach(grade => {
+    const row = `
+      <tr>
+        <td>${grade.Subject}</td>
+        <td>${grade.Score}</td>
+        <td>${grade.Period}</td>
+        <td>${grade.Status}</td>
+        <td>${grade.RejectReason || ""}</td>
+      </tr>`;
+    tbody.innerHTML += row;
+  });
+}
+</script>
 
 </body>
 </html>
