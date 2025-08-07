@@ -1,109 +1,135 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Principal Login - Tyneceploh</title>
+  <meta charset="UTF-8" />
+  <title>Principal Login</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
+    /* Same styling as student & teacher login */
+    * {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
     body {
-      font-family: Arial, sans-serif;
-      background-color: #f3f3f3;
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #fce4ec, #f8bbd0);
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
     }
-
     .login-container {
-      background-color: #fff;
-      padding: 30px;
+      background: #ffffff;
+      padding: 40px 30px;
       border-radius: 12px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.2);
-      width: 300px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 400px;
     }
-
     h2 {
       text-align: center;
+      color: #d81b60;
       margin-bottom: 20px;
-      color: #6d214f;
     }
-
+    label {
+      font-weight: bold;
+      color: #333;
+      display: block;
+      margin-top: 10px;
+    }
     input {
       width: 100%;
       padding: 10px;
-      margin: 8px 0;
+      margin: 10px 0 20px 0;
       border: 1px solid #ccc;
       border-radius: 8px;
+      font-size: 15px;
     }
-
     button {
       width: 100%;
-      background-color: #6d214f;
+      background-color: #d81b60;
       color: white;
-      padding: 10px;
       border: none;
+      padding: 12px;
       border-radius: 8px;
+      font-size: 16px;
       cursor: pointer;
+      transition: background-color 0.3s;
     }
-
     button:hover {
-      background-color: #8e44ad;
+      background-color: #880e4f;
     }
-
-    .message {
-      margin-top: 10px;
+    #result {
       text-align: center;
-      font-weight: bold;
+      margin-top: 15px;
+      font-size: 15px;
+    }
+    @media (max-width: 480px) {
+      .login-container {
+        padding: 30px 20px;
+      }
     }
   </style>
 </head>
 <body>
-
   <div class="login-container">
     <h2>Principal Login</h2>
-    <input type="text" id="name" placeholder="Enter Name" required>
-    <input type="password" id="pin" placeholder="Enter PIN" required>
+
+    <label for="principalName">Name</label>
+    <input type="text" id="principalName" placeholder="Enter your Name" />
+
+    <label for="pin">PIN</label>
+    <input type="password" id="pin" placeholder="Enter your PIN" />
+
     <button onclick="login()">Login</button>
-    <div class="message" id="message"></div>
+    <p id="result"></p>
   </div>
 
   <script>
-    function login() {
-      const name = document.getElementById("name").value.trim();
-      const pin = document.getElementById("pin").value.trim();
-      const message = document.getElementById("message");
+    async function login() {
+      const name = document.getElementById('principalName').value.trim();
+      const pin = document.getElementById('pin').value.trim();
+      const result = document.getElementById('result');
 
       if (!name || !pin) {
-        message.innerText = "Please fill in all fields";
-        message.style.color = "red";
+        result.style.color = 'red';
+        result.textContent = 'Please enter both Name and PIN.';
         return;
       }
 
-      fetch("https://script.google.com/macros/s/AKfycbw9P_XOd4k498l0e4WDbFqAF1asb2u4sRj_uX2B-2S1MvyWOeWQZqxy8dr13mPOdNOeuw/exec", {
-        method: "POST",
-        body: new URLSearchParams({
-          role: "principal",
-          id: name,
-          pin: pin
-        })
-      })
-      .then(response => response.json())
-      .then(data => {
+      const url = 'https://script.google.com/macros/s/AKfycbw9P_XOd4k498l0e4WDbFqAF1asb2u4sRj_uX2B-2S1MvyWOeWQZqxy8dr13mPOdNOeuw/exec';
+
+      const formData = new URLSearchParams();
+      formData.append('action', 'login');  // required for router
+      formData.append('role', 'principal');
+      formData.append('id', name);
+      formData.append('pin', pin);
+
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await response.json();
+
         if (data.success) {
-          message.innerText = "Welcome, " + data.name + "!";
-          message.style.color = "green";
-          // Redirect to principal dashboard
-          window.location.href = "principal_dashboard.html";
+          result.style.color = 'green';
+          result.textContent = `Login successful! Welcome, ${data.name}`;
+          setTimeout(() => {
+            window.location.href = `principal_dashboard.html?principalName=${encodeURIComponent(name)}`;
+          }, 1000);
         } else {
-          message.innerText = data.message;
-          message.style.color = "red";
+          result.style.color = 'red';
+          result.textContent = data.message;
         }
-      })
-      .catch(error => {
-        message.innerText = "Network error";
-        message.style.color = "red";
-      });
+      } catch (error) {
+        result.style.color = 'red';
+        result.textContent = 'Network error or server issue.';
+        console.error(error);
+      }
     }
   </script>
-
 </body>
 </html>
