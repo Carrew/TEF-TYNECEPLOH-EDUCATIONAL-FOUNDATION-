@@ -1,170 +1,134 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
+  <title>Student Results</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Student Dashboard | Tyneceploh Educational Foundation</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
-
     body {
-      font-family: 'Poppins', sans-serif;
-      background: #f7f9fc;
-      margin: 0; padding: 20px;
-      max-width: 900px;
-      margin-left: auto;
-      margin-right: auto;
+      font-family: Arial, sans-serif;
+      padding: 10px;
     }
-    header {
+    h2 {
       text-align: center;
-      margin-bottom: 30px;
     }
-    header h1 {
-      font-weight: 600;
-      color: #2c3e50;
-      margin: 0;
-    }
-    #welcome {
-      font-size: 18px;
-      margin-top: 5px;
-      color: #34495e;
+    #periodSelector {
+      margin: 10px 0;
+      padding: 8px;
+      width: 100%;
     }
     table {
       width: 100%;
       border-collapse: collapse;
-      background: white;
-      border-radius: 10px;
-      overflow: hidden;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      margin-top: 10px;
     }
     th, td {
-      padding: 12px 15px;
-      text-align: left;
-      border-bottom: 1px solid #ecf0f1;
-    }
-    th {
-      background: #2980b9;
-      color: white;
-      font-weight: 600;
-    }
-    tr:hover {
-      background-color: #f1f6fb;
-    }
-    .grade-low {
-      color: #e74c3c;
-      font-weight: 700;
-    }
-    .grade-high {
-      color: #2980b9;
-      font-weight: 700;
-    }
-    #message {
-      margin-top: 20px;
-      font-weight: 600;
-      color: #e74c3c;
+      padding: 8px;
+      border: 1px solid #ccc;
       text-align: center;
+    }
+    .low-score {
+      color: red;
+    }
+    .high-score {
+      color: blue;
+    }
+    .avg-row {
+      font-weight: bold;
+      background-color: #f1f1f1;
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1>Student Dashboard</h1>
-    <div id="welcome">Loading...</div>
-  </header>
+  <h2>My Academic Results</h2>
 
-  <table id="gradesTable" style="display:none;">
+  <select id="periodSelector">
+    <option value="All">All Periods</option>
+  </select>
+
+  <table id="resultsTable">
     <thead>
       <tr>
         <th>Subject</th>
-        <th>Period</th>
         <th>Score</th>
+        <th>Period</th>
       </tr>
     </thead>
-    <tbody id="gradesBody"></tbody>
+    <tbody></tbody>
+    <tfoot>
+      <tr class="avg-row">
+        <td colspan="2">Average</td>
+        <td id="avgScore">--</td>
+      </tr>
+    </tfoot>
   </table>
 
-  <div id="message"></div>
-
   <script>
-    const backendURL = 'https://script.google.com/macros/s/AKfycbzUWtGTKFviAGwhOvjJjjDOUGHn9U-L3XpfqjWYlxs6PzXIcypX8kwwA0tN6EmAgum9/exec';
+    // REPLACE THIS WITH YOUR LOGIN REDIRECTED ID
+    const studentId = sessionStorage.getItem("studentId") || ""; // set in student_login.html
 
-    function getQueryParam(param) {
-      const urlParams = new URLSearchParams(window.location.search);
-      return urlParams.get(param);
-    }
-
-    function showMessage(msg) {
-      document.getElementById('message').textContent = msg;
-    }
-
-    function clearMessage() {
-      document.getElementById('message').textContent = '';
-    }
-
-    function loadGrades(studentId) {
-      const callbackName = 'jsonpCallback_' + Math.floor(Math.random() * 100000);
-      window[callbackName] = function(response) {
-        delete window[callbackName];
-        document.body.removeChild(script);
-
-        if (response.success && response.grades && response.grades.length > 0) {
-          document.getElementById('welcome').textContent = `Welcome, ${response.name || studentId}`;
-
-          const tbody = document.getElementById('gradesBody');
-          tbody.innerHTML = ''; // Clear previous
-
-          response.grades.forEach(grade => {
-            const tr = document.createElement('tr');
-
-            const subjectTd = document.createElement('td');
-            subjectTd.textContent = grade.Subject;
-            tr.appendChild(subjectTd);
-
-            const periodTd = document.createElement('td');
-            periodTd.textContent = grade.GradePeriod;
-            tr.appendChild(periodTd);
-
-            const scoreTd = document.createElement('td');
-            scoreTd.textContent = grade.Score;
-            if (parseFloat(grade.Score) < 70) {
-              scoreTd.classList.add('grade-low');
-            } else {
-              scoreTd.classList.add('grade-high');
-            }
-            tr.appendChild(scoreTd);
-
-            tbody.appendChild(tr);
-          });
-
-          document.getElementById('gradesTable').style.display = 'table';
-          clearMessage();
-        } else if(response.success) {
-          document.getElementById('welcome').textContent = `Welcome, ${response.name || studentId}`;
-          showMessage('No grades found.');
-        } else {
-          showMessage(response.message || 'Failed to fetch grades.');
-        }
-      };
-
-      const url = `${backendURL}?callback=${callbackName}&action=getApprovedGrades&role=student&userId=${encodeURIComponent(studentId)}`;
-
-      const script = document.createElement('script');
-      script.src = url;
-      script.onerror = function() {
-        showMessage('Network error or backend not reachable');
-        delete window[callbackName];
-        document.body.removeChild(script);
-      };
-      document.body.appendChild(script);
-    }
-
-    // Main:
-    const studentId = getQueryParam('studentId');
     if (!studentId) {
-      document.getElementById('welcome').textContent = '';
-      showMessage('Missing Student ID.');
-    } else {
-      loadGrades(studentId);
+      alert("Login required!");
+      window.location.href = "student_login.html"; // redirect if not logged in
+    }
+
+    const endpoint = "https://script.google.com/macros/s/AKfycbxD4I6gTNaDa-HgtZQazLP2hZDOa-yEcyt0IBkJNJ008xMu6aDx3Gw0TuY-MgHv83qO/exec?role=student&id=" + encodeURIComponent(studentId);
+
+    let fullData = [];
+
+    fetch(endpoint)
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          fullData = data.grades || [];
+          populatePeriods(fullData);
+          displayResults(fullData, "All");
+        } else {
+          alert(data.message || "Failed to fetch data");
+        }
+      })
+      .catch(err => {
+        alert("Error: " + err.message);
+      });
+
+    const periodSelector = document.getElementById("periodSelector");
+    const resultsTableBody = document.querySelector("#resultsTable tbody");
+    const avgDisplay = document.getElementById("avgScore");
+
+    periodSelector.addEventListener("change", () => {
+      const selectedPeriod = periodSelector.value;
+      displayResults(fullData, selectedPeriod);
+    });
+
+    function populatePeriods(data) {
+      const periods = [...new Set(data.map(row => row.Period))];
+      periods.forEach(period => {
+        const opt = document.createElement("option");
+        opt.value = period;
+        opt.textContent = period;
+        periodSelector.appendChild(opt);
+      });
+    }
+
+    function displayResults(data, periodFilter) {
+      resultsTableBody.innerHTML = "";
+      let filtered = periodFilter === "All" ? data : data.filter(row => row.Period === periodFilter);
+      let total = 0;
+      filtered.forEach(row => {
+        const tr = document.createElement("tr");
+        const score = parseFloat(row.Score);
+        total += score;
+
+        tr.innerHTML = `
+          <td>${row.Subject}</td>
+          <td class="${score < 70 ? 'low-score' : 'high-score'}">${score}</td>
+          <td>${row.Period}</td>
+        `;
+
+        resultsTableBody.appendChild(tr);
+      });
+
+      const average = filtered.length ? (total / filtered.length).toFixed(2) : "--";
+      avgDisplay.textContent = average;
     }
   </script>
 </body>
