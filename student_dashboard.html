@@ -2,46 +2,53 @@
 <html>
 <head>
   <title>Student Results</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8">
   <style>
     body {
       font-family: Arial, sans-serif;
-      padding: 10px;
+      background: #f9f9f9;
+      padding: 20px;
     }
     h2 {
-      text-align: center;
+      color: #444;
     }
-    #periodSelector {
-      margin: 10px 0;
-      padding: 8px;
-      width: 100%;
-    }
-    table {
+    #resultsTable {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 10px;
+      margin-top: 20px;
     }
-    th, td {
-      padding: 8px;
+    #resultsTable th, #resultsTable td {
       border: 1px solid #ccc;
+      padding: 8px;
       text-align: center;
     }
-    .low-score {
+    #resultsTable th {
+      background-color: #f2f2f2;
+    }
+    .red {
       color: red;
-    }
-    .high-score {
-      color: blue;
-    }
-    .avg-row {
       font-weight: bold;
-      background-color: #f1f1f1;
+    }
+    .blue {
+      color: blue;
+      font-weight: bold;
+    }
+    #averageScore {
+      margin-top: 15px;
+      font-weight: bold;
+    }
+    select {
+      padding: 5px;
+      margin-bottom: 10px;
     }
   </style>
 </head>
 <body>
-  <h2>My Academic Results</h2>
 
-  <select id="periodSelector">
+  <h2>Welcome, <span id="studentName"></span></h2>
+  
+  <label for="periodFilter">Filter by Period:</label>
+  <select id="periodFilter">
     <option value="All">All Periods</option>
   </select>
 
@@ -53,83 +60,94 @@
         <th>Period</th>
       </tr>
     </thead>
-    <tbody></tbody>
-    <tfoot>
-      <tr class="avg-row">
-        <td colspan="2">Average</td>
-        <td id="avgScore">--</td>
-      </tr>
-    </tfoot>
+    <tbody id="resultsBody"></tbody>
   </table>
 
+  <div id="averageScore"></div>
+
   <script>
-    // REPLACE THIS WITH YOUR LOGIN REDIRECTED ID
-    const studentId = sessionStorage.getItem("studentId") || ""; // set in student_login.html
+    const studentId = localStorage.getItem("studentId");
+    const studentName = localStorage.getItem("studentName");
+    const apiUrl = "https://script.google.com/macros/s/AKfycbxD4I6gTNaDa-HgtZQazLP2hZDOa-yEcyt0IBkJNJ008xMu6aDx3Gw0TuY-MgHv83qO/exec";
+
+    document.getElementById("studentName").innerText = studentName || "";
 
     if (!studentId) {
-      alert("Login required!");
-      window.location.href = "student_login.html"; // redirect if not logged in
+      alert("Student ID missing. Please log in again.");
+      window.location.href = "student_login.html";
     }
 
-    const endpoint = "https://script.google.com/macros/s/AKfycbxD4I6gTNaDa-HgtZQazLP2hZDOa-yEcyt0IBkJNJ008xMu6aDx3Gw0TuY-MgHv83qO/exec?role=student&id=" + encodeURIComponent(studentId);
+    let allGrades = [];
 
-    let fullData = [];
+    function fetchGrades() {
+      fetch(`${apiUrl}?studentId=${studentId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            allGrades = data.grades;
+            populateDropdown(allGrades);
+            displayGrades(allGrades);
+          } else {
+            alert("No grades found.");
+          }
+        })
+        .catch(err => {
+          console.error("Fetch error", err);
+          alert("Error fetching results.");
+        });
+    }
 
-    fetch(endpoint)
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          fullData = data.grades || [];
-          populatePeriods(fullData);
-          displayResults(fullData, "All");
-        } else {
-          alert(data.message || "Failed to fetch data");
-        }
-      })
-      .catch(err => {
-        alert("Error: " + err.message);
+    function populateDropdown(grades) {
+      const dropdown = document.getElementById("periodFilter");
+      const periods = [...new Set(grades.map(g => g.Period.trim()))];
+
+      periods.forEach(p => {
+        const option = document.createElement("option");
+        option.value = p;
+        option.textContent = p;
+        dropdown.appendChild(option);
       });
 
-    const periodSelector = document.getElementById("periodSelector");
-    const resultsTableBody = document.querySelector("#resultsTable tbody");
-    const avgDisplay = document.getElementById("avgScore");
-
-    periodSelector.addEventListener("change", () => {
-      const selectedPeriod = periodSelector.value;
-      displayResults(fullData, selectedPeriod);
-    });
-
-    function populatePeriods(data) {
-      const periods = [...new Set(data.map(row => row.Period))];
-      periods.forEach(period => {
-        const opt = document.createElement("option");
-        opt.value = period;
-        opt.textContent = period;
-        periodSelector.appendChild(opt);
+      dropdown.addEventListener("change", () => {
+        const selected = dropdown.value;
+        const filtered = selected === "All" ? allGrades : allGrades.filter(g => g.Period.trim() === selected);
+        displayGrades(filtered);
       });
     }
 
-    function displayResults(data, periodFilter) {
-      resultsTableBody.innerHTML = "";
-      let filtered = periodFilter === "All" ? data : data.filter(row => row.Period === periodFilter);
+    function displayGrades(grades) {
+      const tbody = document.getElementById("resultsBody");
+      tbody.innerHTML = "";
+
       let total = 0;
-      filtered.forEach(row => {
-        const tr = document.createElement("tr");
-        const score = parseFloat(row.Score);
-        total += score;
 
-        tr.innerHTML = `
-          <td>${row.Subject}</td>
-          <td class="${score < 70 ? 'low-score' : 'high-score'}">${score}</td>
-          <td>${row.Period}</td>
-        `;
+      grades.forEach(grade => {
+        const row = document.createElement("tr");
 
-        resultsTableBody.appendChild(tr);
+        const subject = document.createElement("td");
+        subject.textContent = grade.Subject;
+
+        const score = document.createElement("td");
+        score.textContent = grade.Score;
+        score.className = grade.Score >= 70 ? "blue" : "red";
+
+        const period = document.createElement("td");
+        period.textContent = grade.Period.trim();
+
+        row.appendChild(subject);
+        row.appendChild(score);
+        row.appendChild(period);
+        tbody.appendChild(row);
+
+        total += Number(grade.Score);
       });
 
-      const average = filtered.length ? (total / filtered.length).toFixed(2) : "--";
-      avgDisplay.textContent = average;
+      const average = grades.length > 0 ? (total / grades.length).toFixed(2) : 0;
+      document.getElementById("averageScore").textContent = `Average Score: ${average}`;
     }
+
+    window.onload = fetchGrades;
   </script>
+
 </body>
 </html>
