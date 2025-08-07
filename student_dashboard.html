@@ -2,49 +2,70 @@
 <html>
 <head>
   <title>Student Dashboard</title>
+  <style>
+    body { font-family: Arial; padding: 20px; background: #f7f7f7; }
+    #results { margin-top: 20px; }
+    .error { color: red; }
+    .success { color: green; }
+  </style>
 </head>
 <body>
-  <h2>Welcome to Your Dashboard</h2>
-  <p id="studentId"></p>
-  <div id="results">Loading results...</div>
+  <h2>Welcome, <span id="studentName"></span></h2>
+  <p>Student ID: <span id="studentId"></span></p>
+
+  <button onclick="fetchResults()">View My Results</button>
+  <div id="results"></div>
 
   <script>
-    const scriptURL = 'https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec';
+    // Load info from local storage
+    const userId = localStorage.getItem("userId");
+    const name = localStorage.getItem("name");
+    const role = localStorage.getItem("role");
 
-    // Get user ID from localStorage (it was saved during login)
-    const studentId = localStorage.getItem("userId");
-
-    document.getElementById("studentId").innerText = "ID: " + studentId;
-
-    // Check if userId is available
-    if (!studentId) {
-      document.getElementById("results").innerText = "Error: Not logged in.";
+    // Display basic user info
+    if (!userId || !role || role !== "student") {
+      document.body.innerHTML = "<h3 class='error'>Access Denied or Not Logged In</h3>";
     } else {
-      fetch(scriptURL, {
-        method: "POST",
-        body: new URLSearchParams({
-          action: "getResults",
-          userId: studentId
+      document.getElementById("studentName").textContent = name;
+      document.getElementById("studentId").textContent = userId;
+    }
+
+    // Function to fetch results from backend
+    function fetchResults() {
+      const scriptURL = "https://script.google.com/macros/s/YOUR_DEPLOYED_SCRIPT_ID/exec";
+
+      fetch(`${scriptURL}?action=getResults&userId=${userId}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            displayResults(data.results);
+          } else {
+            document.getElementById("results").innerHTML = `<p class="error">No results found or error: ${data.message}</p>`;
+          }
         })
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          // Display results (you can customize formatting here)
-          document.getElementById("results").innerHTML = `
-            <p>Name: ${data.name}</p>
-            <p>Math: ${data.math}</p>
-            <p>English: ${data.english}</p>
-            <p>Science: ${data.science}</p>
-          `;
-        } else {
-          document.getElementById("results").innerText = "No results found.";
+        .catch(error => {
+          document.getElementById("results").innerHTML = `<p class="error">Error fetching results: ${error}</p>`;
+        });
+    }
+
+    // Display results in a table
+    function displayResults(results) {
+      let html = `<table border="1" cellpadding="8"><tr>`;
+      for (let key in results[0]) {
+        html += `<th>${key}</th>`;
+      }
+      html += `</tr>`;
+
+      results.forEach(row => {
+        html += `<tr>`;
+        for (let key in row) {
+          html += `<td>${row[key]}</td>`;
         }
-      })
-      .catch(error => {
-        document.getElementById("results").innerText = "Error fetching results.";
-        console.error("Error:", error);
+        html += `</tr>`;
       });
+
+      html += `</table>`;
+      document.getElementById("results").innerHTML = html;
     }
   </script>
 </body>
