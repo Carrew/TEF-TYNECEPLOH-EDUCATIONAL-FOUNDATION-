@@ -1,187 +1,200 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Student Dashboard</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f4f6f8;
-      padding: 20px;
-    }
-
-    .container {
-      max-width: 800px;
-      margin: auto;
-      background: #fff;
-      padding: 30px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-
-    h2 {
-      color: #1976d2;
-      text-align: center;
-    }
-
-    select {
-      width: 100%;
-      padding: 10px;
-      margin-top: 20px;
-      margin-bottom: 10px;
-      font-size: 16px;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 15px;
-    }
-
-    th, td {
-      padding: 12px;
-      border: 1px solid #ddd;
-      text-align: center;
-    }
-
-    .score-low {
-      color: red;
-      font-weight: bold;
-    }
-
-    .score-high {
-      color: #1565c0;
-      font-weight: bold;
-    }
-
-    .average {
-      text-align: right;
-      margin-top: 15px;
-      font-weight: bold;
-    }
-
-    .loading, .error {
-      text-align: center;
-      margin-top: 20px;
-      font-weight: bold;
-    }
-
-    .error {
-      color: red;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Student Dashboard</title>
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f0f4f8;
+    margin: 0; padding: 20px;
+  }
+  h1 {
+    color: #1976d2;
+  }
+  #welcome {
+    margin-bottom: 20px;
+  }
+  #periodFilter {
+    margin-bottom: 15px;
+    padding: 8px;
+    font-size: 16px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+  }
+  th, td {
+    padding: 10px;
+    border: 1px solid #ccc;
+    text-align: left;
+  }
+  th {
+    background: #1976d2;
+    color: white;
+  }
+  .score-high {
+    color: blue;
+    font-weight: bold;
+  }
+  .score-low {
+    color: red;
+    font-weight: bold;
+  }
+  #average {
+    margin-top: 15px;
+    font-weight: bold;
+    font-size: 18px;
+  }
+  #error {
+    color: red;
+    margin-top: 15px;
+  }
+</style>
 </head>
 <body>
-  <div class="container">
-    <h2>Welcome, Student</h2>
-    <label for="periodFilter">Filter by Period:</label>
-    <select id="periodFilter" onchange="renderGrades()">
-      <option value="">All Periods</option>
-      <option value="1st Period">1st Period</option>
-      <option value="2nd Period">2nd Period</option>
-      <option value="3rd Period">3rd Period</option>
-      <option value="Semester Exam">Semester Exam</option>
-      <option value="4th Period">4th Period</option>
-      <option value="5th Period">5th Period</option>
-      <option value="6th Period">6th Period</option>
-      <option value="Final Exam">Final Exam</option>
-    </select>
 
-    <div class="loading" id="loading">Loading results...</div>
-    <div class="error" id="error" style="display: none;">Error fetching results.</div>
+<h1>Student Dashboard</h1>
+<div id="welcome">Welcome, <span id="studentName">Student</span>!</div>
 
-    <table id="gradesTable" style="display: none;">
-      <thead>
-        <tr>
-          <th>Subject</th>
-          <th>Score</th>
-          <th>Period</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+<label for="periodFilter">Filter by Period:</label>
+<select id="periodFilter">
+  <option value="All">All</option>
+</select>
 
-    <div class="average" id="averageDisplay" style="display: none;"></div>
-  </div>
+<table id="gradesTable" aria-label="Grades Table">
+  <thead>
+    <tr>
+      <th>Subject</th>
+      <th>Score</th>
+      <th>Period</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
 
-  <script>
-    const apiUrl = 'https://script.google.com/macros/s/AKfycbw9P_XOd4k498l0e4WDbFqAF1asb2u4sRj_uX2B-2S1MvyWOeWQZqxy8dr13mPOdNOeuw/exec';
+<div id="average"></div>
+<div id="error"></div>
 
+<script>
+  const backendUrl = 'https://script.google.com/macros/s/AKfycbw9P_XOd4k498l0e4WDbFqAF1asb2u4sRj_uX2B-2S1MvyWOeWQZqxy8dr13mPOdNOeuw/exec';
+
+  function getStudentId() {
+    // Try URL param
     const urlParams = new URLSearchParams(window.location.search);
-    const studentId = urlParams.get('userId');
+    let id = urlParams.get('userId');
 
-    const loading = document.getElementById('loading');
-    const error = document.getElementById('error');
-    const gradesTable = document.getElementById('gradesTable');
-    const gradesTbody = gradesTable.querySelector('tbody');
-    const averageDisplay = document.getElementById('averageDisplay');
-
-    let approvedGrades = [];
-
-    async function fetchGrades() {
-      if (!studentId) {
-        error.textContent = 'Missing Student ID.';
-        error.style.display = 'block';
-        loading.style.display = 'none';
-        return;
-      }
-
-      try {
-        const response = await fetch(`${apiUrl}?studentId=${studentId}`);
-        const data = await response.json();
-
-        if (data.success && Array.isArray(data.grades)) {
-          approvedGrades = data.grades.filter(g => g.Status === 'Approved');
-          loading.style.display = 'none';
-          renderGrades();
-        } else {
-          throw new Error("Unexpected response");
-        }
-      } catch (err) {
-        console.error(err);
-        error.style.display = 'block';
-        loading.style.display = 'none';
-      }
+    if (!id) {
+      // fallback localStorage
+      id = localStorage.getItem('studentId');
+    } else {
+      // save to localStorage for next time
+      localStorage.setItem('studentId', id);
     }
+    return id;
+  }
 
-    function renderGrades() {
-      const period = document.getElementById('periodFilter').value;
-      const filtered = approvedGrades.filter(g => !period || g.Period.trim() === period.trim());
+  function renderGrades(grades) {
+    const tbody = document.querySelector('#gradesTable tbody');
+    tbody.innerHTML = '';
 
-      gradesTbody.innerHTML = '';
+    // Get unique periods to populate filter dropdown
+    const periodsSet = new Set();
+    grades.forEach(g => periodsSet.add(g.Period.trim()));
+    const periods = Array.from(periodsSet).sort();
 
-      if (filtered.length === 0) {
-        gradesTbody.innerHTML = `<tr><td colspan="3">No results found.</td></tr>`;
-        gradesTable.style.display = 'table';
-        averageDisplay.style.display = 'none';
+    // Populate filter dropdown
+    const periodFilter = document.getElementById('periodFilter');
+    periodFilter.innerHTML = '<option value="All">All</option>';
+    periods.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p;
+      opt.textContent = p;
+      periodFilter.appendChild(opt);
+    });
+
+    // Filter grades based on selected period
+    function filterAndDisplay() {
+      const selectedPeriod = periodFilter.value;
+      let filteredGrades = selectedPeriod === 'All' ? grades : grades.filter(g => g.Period.trim() === selectedPeriod);
+
+      tbody.innerHTML = '';
+      if (filteredGrades.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3">No grades found for selected period.</td></tr>';
+        document.getElementById('average').textContent = '';
         return;
       }
 
-      let total = 0;
+      let totalScore = 0;
+      filteredGrades.forEach(g => {
+        const tr = document.createElement('tr');
 
-      filtered.forEach(g => {
-        const score = parseFloat(g.Score);
-        total += score;
+        const subjectTd = document.createElement('td');
+        subjectTd.textContent = g.Subject;
+        tr.appendChild(subjectTd);
 
-        const scoreClass = score >= 70 ? 'score-high' : 'score-low';
+        const scoreTd = document.createElement('td');
+        scoreTd.textContent = g.Score;
+        scoreTd.className = g.Score >= 70 ? 'score-high' : 'score-low';
+        tr.appendChild(scoreTd);
 
-        gradesTbody.innerHTML += `
-          <tr>
-            <td>${g.Subject}</td>
-            <td class="${scoreClass}">${score}</td>
-            <td>${g.Period}</td>
-          </tr>
-        `;
+        const periodTd = document.createElement('td');
+        periodTd.textContent = g.Period.trim();
+        tr.appendChild(periodTd);
+
+        tbody.appendChild(tr);
+
+        totalScore += Number(g.Score);
       });
 
-      const avg = (total / filtered.length).toFixed(2);
-      averageDisplay.innerHTML = `Average Score: <span class="${avg >= 70 ? 'score-high' : 'score-low'}">${avg}</span>`;
-      gradesTable.style.display = 'table';
-      averageDisplay.style.display = 'block';
+      const avg = (totalScore / filteredGrades.length).toFixed(2);
+      document.getElementById('average').textContent = `Average Score: ${avg}`;
     }
 
-    fetchGrades();
-  </script>
+    periodFilter.addEventListener('change', filterAndDisplay);
+
+    // Initially show all
+    filterAndDisplay();
+  }
+
+  async function fetchGrades(studentId) {
+    if (!studentId) {
+      document.getElementById('error').textContent = 'Student ID not found. Please login again.';
+      return;
+    }
+    try {
+      const url = new URL(backendUrl);
+      url.searchParams.append('studentId', studentId);
+
+      const response = await fetch(url.toString());
+      const data = await response.json();
+
+      if (data.success) {
+        // Show student name if available (optional)
+        if (data.name) {
+          document.getElementById('studentName').textContent = data.name;
+        }
+
+        // Filter only approved grades
+        const approvedGrades = data.grades.filter(g => g.Status === 'Approved');
+        renderGrades(approvedGrades);
+      } else {
+        document.getElementById('error').textContent = data.message || 'Failed to fetch grades.';
+      }
+    } catch (error) {
+      document.getElementById('error').textContent = 'Error fetching grades. Check your network.';
+      console.error(error);
+    }
+  }
+
+  // Run on page load
+  window.onload = () => {
+    const studentId = getStudentId();
+    fetchGrades(studentId);
+  };
+</script>
+
 </body>
 </html>
