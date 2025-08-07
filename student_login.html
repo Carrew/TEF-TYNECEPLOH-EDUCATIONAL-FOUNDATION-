@@ -121,10 +121,15 @@
         const data = await response.json();
 
         if (data.success) {
+          // ✅ Store values in localStorage
+          localStorage.setItem('studentId', userId);
+          localStorage.setItem('studentName', data.name || '');
+
           result.style.color = 'green';
           result.textContent = `Login successful! Welcome, ${data.name}`;
+
           setTimeout(() => {
-            window.location.href = 'student_dashboard.html?userId=' + encodeURIComponent(userId);
+            window.location.href = 'student_dashboard.html';
           }, 1000);
         } else {
           result.style.color = 'red';
