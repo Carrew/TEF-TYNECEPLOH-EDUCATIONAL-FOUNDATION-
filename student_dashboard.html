@@ -3,69 +3,43 @@
 <head>
   <title>Student Dashboard</title>
   <style>
-    body { font-family: Arial; padding: 20px; background: #f7f7f7; }
-    #results { margin-top: 20px; }
-    .error { color: red; }
-    .success { color: green; }
+    body { font-family: Arial; padding: 20px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #aaa; padding: 8px; text-align: center; }
   </style>
 </head>
 <body>
-  <h2>Welcome, <span id="studentName"></span></h2>
-  <p>Student ID: <span id="studentId"></span></p>
-
-  <button onclick="fetchResults()">View My Results</button>
-  <div id="results"></div>
+  <h2>Welcome, <span id="student-name">Loading...</span></h2>
+  <table id="results-table">
+    <tr><th>Subject</th><th>Score</th></tr>
+  </table>
 
   <script>
-    // Load info from local storage
-    const userId = localStorage.getItem("userId");
-    const name = localStorage.getItem("name");
-    const role = localStorage.getItem("role");
+    const studentId = localStorage.getItem("studentId");
 
-    // Display basic user info
-    if (!userId || !role || role !== "student") {
-      document.body.innerHTML = "<h3 class='error'>Access Denied or Not Logged In</h3>";
+    if (!studentId) {
+      document.body.innerHTML = "<h2>Access Denied or Not Logged In</h2>";
     } else {
-      document.getElementById("studentName").textContent = name;
-      document.getElementById("studentId").textContent = userId;
-    }
-
-    // Function to fetch results from backend
-    function fetchResults() {
-      const scriptURL = "https://script.google.com/macros/s/YOUR_DEPLOYED_SCRIPT_ID/exec";
-
-      fetch(`${scriptURL}?action=getResults&userId=${userId}`)
+      fetch(`https://script.google.com/macros/s/YOUR_DEPLOYED_SCRIPT_URL/exec?id=${studentId}&role=student`)
         .then(response => response.json())
         .then(data => {
           if (data.success) {
-            displayResults(data.results);
+            document.getElementById("student-name").textContent = data.name;
+            const resultsTable = document.getElementById("results-table");
+            resultsTable.innerHTML = "<tr><th>Subject</th><th>Score</th></tr>";
+            data.grades.forEach(grade => {
+              const row = document.createElement("tr");
+              row.innerHTML = `<td>${grade.subject}</td><td>${grade.score}</td>`;
+              resultsTable.appendChild(row);
+            });
           } else {
-            document.getElementById("results").innerHTML = `<p class="error">No results found or error: ${data.message}</p>`;
+            document.body.innerHTML = `<h2>Failed to fetch results: ${data.message}</h2>`;
           }
         })
         .catch(error => {
-          document.getElementById("results").innerHTML = `<p class="error">Error fetching results: ${error}</p>`;
+          console.error("Error fetching results:", error);
+          document.body.innerHTML = `<h2>Error fetching results</h2>`;
         });
-    }
-
-    // Display results in a table
-    function displayResults(results) {
-      let html = `<table border="1" cellpadding="8"><tr>`;
-      for (let key in results[0]) {
-        html += `<th>${key}</th>`;
-      }
-      html += `</tr>`;
-
-      results.forEach(row => {
-        html += `<tr>`;
-        for (let key in row) {
-          html += `<td>${row[key]}</td>`;
-        }
-        html += `</tr>`;
-      });
-
-      html += `</table>`;
-      document.getElementById("results").innerHTML = html;
     }
   </script>
 </body>
