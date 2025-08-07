@@ -1,32 +1,82 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
   <title>Student Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; background: #f0f0f0; }
-    .hidden { display: none; }
-    .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 10px; }
-    select, input, button { width: 100%; padding: 10px; margin: 10px 0; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    th, td { border: 1px solid #ccc; padding: 10px; text-align: center; }
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: auto;
+      background: #fff;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      color: #1976d2;
+      text-align: center;
+    }
+
+    select {
+      width: 100%;
+      padding: 10px;
+      margin-top: 20px;
+      margin-bottom: 10px;
+      font-size: 16px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+
+    th, td {
+      padding: 12px;
+      border: 1px solid #ddd;
+      text-align: center;
+    }
+
+    .score-low {
+      color: red;
+      font-weight: bold;
+    }
+
+    .score-high {
+      color: #1565c0;
+      font-weight: bold;
+    }
+
+    .average {
+      text-align: right;
+      margin-top: 15px;
+      font-weight: bold;
+    }
+
+    .loading, .error {
+      text-align: center;
+      margin-top: 20px;
+      font-weight: bold;
+    }
+
+    .error {
+      color: red;
+    }
   </style>
 </head>
 <body>
-
-<div class="container">
-  <div id="loginPanel">
-    <h2>Student Login</h2>
-    <input type="text" id="studentId" placeholder="Enter your Student ID" />
-    <input type="password" id="pin" placeholder="Enter your PIN" />
-    <button onclick="login()">Login</button>
-    <p id="loginError" style="color:red;"></p>
-  </div>
-
-  <div id="dashboardPanel" class="hidden">
-    <h2>Welcome, <span id="studentName"></span></h2>
-
-    <label>Filter by Period:</label>
-    <select id="periodFilter" onchange="displayGrades()">
+  <div class="container">
+    <h2>Welcome, Student</h2>
+    <label for="periodFilter">Filter by Period:</label>
+    <select id="periodFilter" onchange="renderGrades()">
       <option value="">All Periods</option>
       <option value="1st Period">1st Period</option>
       <option value="2nd Period">2nd Period</option>
@@ -38,110 +88,100 @@
       <option value="Final Exam">Final Exam</option>
     </select>
 
-    <table id="gradesTable">
+    <div class="loading" id="loading">Loading results...</div>
+    <div class="error" id="error" style="display: none;">Error fetching results.</div>
+
+    <table id="gradesTable" style="display: none;">
       <thead>
         <tr>
           <th>Subject</th>
           <th>Score</th>
           <th>Period</th>
-          <th>Status</th>
-          <th>Reject Reason</th>
         </tr>
       </thead>
       <tbody></tbody>
     </table>
+
+    <div class="average" id="averageDisplay" style="display: none;"></div>
   </div>
-</div>
 
-<script>
-const scriptURL = "https://script.google.com/macros/s/AKfycbxD4I6gTNaDa-HgtZQazLP2hZDOa-yEcyt0IBkJNJ008xMu6aDx3Gw0TuY-MgHv83qO/exec";
+  <script>
+    const apiUrl = 'https://script.google.com/macros/s/AKfycbw9P_XOd4k498l0e4WDbFqAF1asb2u4sRj_uX2B-2S1MvyWOeWQZqxy8dr13mPOdNOeuw/exec';
 
-window.onload = function () {
-  const studentId = localStorage.getItem("studentId");
-  const studentName = localStorage.getItem("studentName");
+    const urlParams = new URLSearchParams(window.location.search);
+    const studentId = urlParams.get('userId');
 
-  if (studentId) {
-    document.getElementById("loginPanel").classList.add("hidden");
-    document.getElementById("dashboardPanel").classList.remove("hidden");
-    document.getElementById("studentName").textContent = studentName || studentId;
-    fetchGrades(studentId);
-  }
-};
+    const loading = document.getElementById('loading');
+    const error = document.getElementById('error');
+    const gradesTable = document.getElementById('gradesTable');
+    const gradesTbody = gradesTable.querySelector('tbody');
+    const averageDisplay = document.getElementById('averageDisplay');
 
-function login() {
-  const id = document.getElementById("studentId").value.trim();
-  const pin = document.getElementById("pin").value.trim();
+    let approvedGrades = [];
 
-  if (!id || !pin) {
-    document.getElementById("loginError").textContent = "Please enter ID and PIN.";
-    return;
-  }
-
-  fetch(`${scriptURL}?userId=${id}&pin=${pin}`)
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) {
-        localStorage.setItem("studentId", data.studentId);
-        localStorage.setItem("studentName", data.name || data.studentId);
-        document.getElementById("studentName").textContent = data.name || data.studentId;
-        document.getElementById("loginPanel").classList.add("hidden");
-        document.getElementById("dashboardPanel").classList.remove("hidden");
-        fetchGrades(data.studentId);
-      } else {
-        document.getElementById("loginError").textContent = "Invalid ID or PIN.";
+    async function fetchGrades() {
+      if (!studentId) {
+        error.textContent = 'Missing Student ID.';
+        error.style.display = 'block';
+        loading.style.display = 'none';
+        return;
       }
-    })
-    .catch(error => {
-      console.error("Login error:", error);
-      document.getElementById("loginError").textContent = "Network error.";
-    });
-}
 
-let grades = [];
+      try {
+        const response = await fetch(`${apiUrl}?studentId=${studentId}`);
+        const data = await response.json();
 
-function fetchGrades(studentId) {
-  fetch(`${scriptURL}?studentId=${studentId}`)
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) {
-        grades = data.grades || [];
-        displayGrades();
-      } else {
-        alert("Error fetching results.");
+        if (data.success && Array.isArray(data.grades)) {
+          approvedGrades = data.grades.filter(g => g.Status === 'Approved');
+          loading.style.display = 'none';
+          renderGrades();
+        } else {
+          throw new Error("Unexpected response");
+        }
+      } catch (err) {
+        console.error(err);
+        error.style.display = 'block';
+        loading.style.display = 'none';
       }
-    })
-    .catch(error => {
-      console.error("Fetch error:", error);
-      alert("Error fetching results.");
-    });
-}
+    }
 
-function displayGrades() {
-  const tbody = document.querySelector("#gradesTable tbody");
-  tbody.innerHTML = "";
+    function renderGrades() {
+      const period = document.getElementById('periodFilter').value;
+      const filtered = approvedGrades.filter(g => !period || g.Period.trim() === period.trim());
 
-  const selectedPeriod = document.getElementById("periodFilter").value;
+      gradesTbody.innerHTML = '';
 
-  const filteredGrades = grades.filter(g => !selectedPeriod || g.Period.trim() === selectedPeriod.trim());
+      if (filtered.length === 0) {
+        gradesTbody.innerHTML = `<tr><td colspan="3">No results found.</td></tr>`;
+        gradesTable.style.display = 'table';
+        averageDisplay.style.display = 'none';
+        return;
+      }
 
-  if (filteredGrades.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="5">No results found for this period.</td></tr>`;
-    return;
-  }
+      let total = 0;
 
-  filteredGrades.forEach(grade => {
-    const row = `
-      <tr>
-        <td>${grade.Subject}</td>
-        <td>${grade.Score}</td>
-        <td>${grade.Period}</td>
-        <td>${grade.Status}</td>
-        <td>${grade.RejectReason || ""}</td>
-      </tr>`;
-    tbody.innerHTML += row;
-  });
-}
-</script>
+      filtered.forEach(g => {
+        const score = parseFloat(g.Score);
+        total += score;
 
+        const scoreClass = score >= 70 ? 'score-high' : 'score-low';
+
+        gradesTbody.innerHTML += `
+          <tr>
+            <td>${g.Subject}</td>
+            <td class="${scoreClass}">${score}</td>
+            <td>${g.Period}</td>
+          </tr>
+        `;
+      });
+
+      const avg = (total / filtered.length).toFixed(2);
+      averageDisplay.innerHTML = `Average Score: <span class="${avg >= 70 ? 'score-high' : 'score-low'}">${avg}</span>`;
+      gradesTable.style.display = 'table';
+      averageDisplay.style.display = 'block';
+    }
+
+    fetchGrades();
+  </script>
 </body>
 </html>
