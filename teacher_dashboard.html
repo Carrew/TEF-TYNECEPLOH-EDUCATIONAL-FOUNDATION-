@@ -1,120 +1,137 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
   <title>Teacher Dashboard</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
-    body { font-family: Arial; padding: 20px; }
-    table, th, td { border: 1px solid black; border-collapse: collapse; padding: 5px; }
-    .pending { background-color: yellow; }
-    .approved { background-color: lightgreen; }
-    .rejected { background-color: #f99; }
+    body {
+      font-family: Arial, sans-serif;
+      padding: 16px;
+    }
+    input, select, button {
+      margin: 8px 0;
+      padding: 8px;
+      width: 100%;
+    }
+    .section {
+      border: 1px solid #ccc;
+      padding: 16px;
+      margin-bottom: 24px;
+      border-radius: 8px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+    }
+    table, th, td {
+      border: 1px solid #888;
+    }
+    th, td {
+      padding: 8px;
+      text-align: left;
+    }
   </style>
 </head>
 <body>
-  <h2>Welcome, <span id="teacherIdDisplay"></span></h2>
-  <button onclick="logout()">Logout</button>
 
-  <h3>Submit New Grade</h3>
-  <form id="gradeForm">
-    Student ID: <input type="text" id="studentId" required><br>
-    Subject: <input type="text" id="subject" required><br>
-    Score: <input type="number" id="score" required><br>
-    Period: 
-    <select id="period" required>
-      <option>1st Period</option>
-      <option>2nd Period</option>
-      <option>3rd Period</option>
-      <option>Semester Exam</option>
-      <option>4th Period</option>
-      <option>5th Period</option>
-      <option>6th Period</option>
-      <option>Final Exam</option>
-    </select><br>
-    <button type="submit">Submit Grade</button>
-  </form>
+  <h2>Teacher Dashboard</h2>
 
-  <h3>Your Submitted Grades</h3>
-  <table id="gradesTable">
-    <thead>
-      <tr>
-        <th>Student ID</th>
-        <th>Subject</th>
-        <th>Score</th>
-        <th>Period</th>
-        <th>Status</th>
-        <th>Reject Reason</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+  <div class="section">
+    <h3>Submit Grades</h3>
+    <input type="text" id="teacherId" placeholder="Your Teacher ID" required />
+    <input type="text" id="studentId" placeholder="Student ID" required />
+    <input type="text" id="subject" placeholder="Subject" required />
+    <input type="number" id="score" placeholder="Score (e.g. 85)" required />
+    <select id="period">
+      <option value="">Select Period</option>
+      <option value="1st Period">1st Period</option>
+      <option value="2nd Period">2nd Period</option>
+      <option value="3rd Period">3rd Period</option>
+      <option value="Semester Exam">Semester Exam</option>
+      <option value="4th Period">4th Period</option>
+      <option value="5th Period">5th Period</option>
+      <option value="6th Period">6th Period</option>
+      <option value="Final Exam">Final Exam</option>
+    </select>
+    <button onclick="submitGrade()">Submit Grade</button>
+  </div>
+
+  <div class="section">
+    <h3>Rejected Grades</h3>
+    <input type="text" id="teacherIdReject" placeholder="Your Teacher ID" />
+    <button onclick="loadRejected()">View Rejected Grades</button>
+    <div id="rejectedList"></div>
+  </div>
 
   <script>
-    const TEACHER_ID = localStorage.getItem("TeacherID");
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw9P_XOd4k498l0e4WDbFqAF1asb2u4sRj_uX2B-2S1MvyWOeWQZqxy8dr13mPOdNOeuw/exec";
+    const routerUrl = "https://script.google.com/macros/s/AKfycbw9P_XOd4k498l0e4WDbFqAF1asb2u4sRj_uX2B-2S1MvyWOeWQZqxy8dr13mPOdNOeuw/exec";
 
-    document.getElementById("teacherIdDisplay").textContent = TEACHER_ID;
+    function submitGrade() {
+      const teacherId = document.getElementById("teacherId").value;
+      const studentId = document.getElementById("studentId").value;
+      const subject = document.getElementById("subject").value;
+      const score = document.getElementById("score").value;
+      const period = document.getElementById("period").value;
 
-    if (!TEACHER_ID) {
-      alert("Access denied. Please log in.");
-      window.location.href = "teacher_login.html"; // Your login page
-    }
-
-    document.getElementById("gradeForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const data = {
-        action: "submitGrade",
-        studentId: document.getElementById("studentId").value,
-        subject: document.getElementById("subject").value,
-        score: document.getElementById("score").value,
-        period: document.getElementById("period").value,
-        teacherId: TEACHER_ID
-      };
-
-      const response = await fetch(SCRIPT_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-      });
-
-      const result = await response.json();
-      alert(result.message || "Grade submitted");
-      loadGrades();
-    });
-
-    async function loadGrades() {
-      const res = await fetch(`${SCRIPT_URL}?action=getTeacherGrades&teacherId=${TEACHER_ID}`);
-      const data = await res.json();
-
-      const tbody = document.querySelector("#gradesTable tbody");
-      tbody.innerHTML = "";
-
-      if (data.success && data.grades.length > 0) {
-        data.grades.forEach(g => {
-          const tr = document.createElement("tr");
-          tr.className = g.Status.toLowerCase();
-
-          tr.innerHTML = `
-            <td>${g.StudentID}</td>
-            <td>${g.Subject}</td>
-            <td>${g.Score}</td>
-            <td>${g.Period}</td>
-            <td>${g.Status}</td>
-            <td>${g.RejectReason || ""}</td>
-          `;
-          tbody.appendChild(tr);
-        });
-      } else {
-        tbody.innerHTML = `<tr><td colspan="6">No grades found</td></tr>`;
+      if (!teacherId || !studentId || !subject || !score || !period) {
+        alert("Please fill in all fields");
+        return;
       }
+
+      const url = `${routerUrl}?action=submitGrade&teacherId=${encodeURIComponent(teacherId)}&studentId=${encodeURIComponent(studentId)}&subject=${encodeURIComponent(subject)}&score=${encodeURIComponent(score)}&period=${encodeURIComponent(period)}`;
+
+      fetch(url)
+        .then(res => res.json())
+        .then(data => {
+          alert(data.message);
+        })
+        .catch(err => {
+          console.error(err);
+          alert("Submission failed. Try again.");
+        });
     }
 
-    function logout() {
-      localStorage.removeItem("TeacherID");
-      window.location.href = "teacher_login.html";
-    }
+    function loadRejected() {
+      const teacherId = document.getElementById("teacherIdReject").value;
+      if (!teacherId) {
+        alert("Enter your Teacher ID");
+        return;
+      }
 
-    window.onload = loadGrades;
+      const url = `${routerUrl}?action=getRejectedGrades&teacherId=${encodeURIComponent(teacherId)}`;
+
+      fetch(url)
+        .then(res => res.json())
+        .then(data => {
+          if (!data.success || !data.grades) {
+            document.getElementById("rejectedList").innerHTML = `<p>${data.message || "No rejected grades found."}</p>`;
+            return;
+          }
+
+          let html = `<table>
+            <tr><th>Student ID</th><th>Subject</th><th>Score</th><th>Period</th><th>Reason</th></tr>`;
+
+          data.grades.forEach(row => {
+            html += `<tr>
+              <td>${row.studentId}</td>
+              <td>${row.subject}</td>
+              <td>${row.score}</td>
+              <td>${row.period}</td>
+              <td>${row.rejectReason}</td>
+            </tr>`;
+          });
+
+          html += `</table>`;
+          document.getElementById("rejectedList").innerHTML = html;
+        })
+        .catch(err => {
+          console.error(err);
+          document.getElementById("rejectedList").innerHTML = "<p>Failed to load rejected grades.</p>";
+        });
+    }
   </script>
+
 </body>
-  </html>
+</html>
