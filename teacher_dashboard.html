@@ -1,160 +1,378 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Teacher Dashboard</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, #ffc0cb, #800000);
-      margin: 0;
-      min-height: 100vh;
-      color: #400000;
-    }
-    header {
-      background-color: #800000;
-      color: #fff;
-      padding: 20px;
-      text-align: center;
-      font-size: 24px;
-      font-weight: 700;
-    }
-    main {
-      padding: 20px;
-      max-width: 900px;
-      margin: 20px auto;
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    }
-    h2 {
-      color: #800000;
-      margin-top: 0;
-    }
-    section {
-      margin-bottom: 30px;
-    }
-    ul {
-      list-style: none;
-      padding-left: 0;
-    }
-    li {
-      background: #ffe6f0;
-      margin-bottom: 8px;
-      padding: 10px;
-      border-radius: 6px;
-      border: 1px solid #d46a6a;
-      font-weight: 600;
-    }
-    button {
-      background-color: #800000;
-      color: white;
-      border: none;
-      padding: 12px 24px;
-      border-radius: 8px;
-      font-size: 16px;
-      font-weight: 700;
-      cursor: pointer;
-      margin-right: 15px;
-      transition: background-color 0.3s ease;
-    }
-    button:hover {
-      background-color: #b22222;
-    }
-    #welcomeMsg {
-      font-size: 20px;
-      font-weight: 600;
-      margin-bottom: 20px;
-    }
-  </style>
+<meta charset="UTF-8" />
+<title>Teacher Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #ffc0cb, #800000);
+    margin: 0;
+    min-height: 100vh;
+    color: #400000;
+  }
+  header {
+    background-color: #800000;
+    color: #fff;
+    padding: 20px;
+    text-align: center;
+    font-size: 24px;
+    font-weight: 700;
+  }
+  main {
+    padding: 20px;
+    max-width: 900px;
+    margin: 20px auto;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  }
+  h2 {
+    color: #800000;
+    margin-top: 0;
+  }
+  section {
+    margin-bottom: 30px;
+  }
+  ul {
+    list-style: none;
+    padding-left: 0;
+  }
+  li {
+    background: #ffe6f0;
+    margin-bottom: 8px;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #d46a6a;
+    font-weight: 600;
+  }
+  label {
+    font-weight: 700;
+    display: block;
+    margin: 8px 0 4px 0;
+  }
+  input, select {
+    width: 100%;
+    padding: 8px;
+    font-size: 15px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+  }
+  button {
+    background-color: #800000;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 12px;
+    transition: background-color 0.3s ease;
+  }
+  button:hover {
+    background-color: #b22222;
+  }
+  #message {
+    margin-top: 10px;
+    font-weight: 700;
+  }
+  .grade-entry {
+    margin-bottom: 10px;
+    padding: 10px;
+    background: #fff0f5;
+    border-radius: 6px;
+    border: 1px solid #d46a6a;
+  }
+  .grade-entry input {
+    width: auto;
+    margin-right: 10px;
+  }
+  .grade-entry button {
+    margin-left: 10px;
+    padding: 6px 12px;
+    font-size: 14px;
+  }
+</style>
 </head>
 <body>
-  <header>
-    Teacher Dashboard
-  </header>
-  <main>
-    <div id="welcomeMsg">Welcome, <span id="teacherName">Teacher</span>!</div>
 
-    <section>
-      <h2>Your Classes</h2>
-      <ul id="classesList">
-        <li>Loading classes...</li>
-      </ul>
-    </section>
+<header>
+  Teacher Dashboard
+</header>
 
-    <section>
-      <h2>Students in Your Classes</h2>
-      <ul id="studentsList">
-        <li>Loading students...</li>
-      </ul>
-    </section>
+<main>
+  <div id="welcomeMsg">Welcome, <span id="teacherName">Teacher</span>!</div>
 
-    <section>
-      <h2>Actions</h2>
-      <button onclick="goToGrades()">Manage Grades</button>
-      <button onclick="goToRejected()">Rejected Grades</button>
-      <button onclick="goToSubmitted()">Submitted Grades</button>
-    </section>
-  </main>
+  <section id="classesSection">
+    <h2>Your Classes</h2>
+    <ul id="classesList"><li>Loading classes...</li></ul>
+  </section>
 
-  <script>
-    // Placeholder: You will replace with actual teacher ID and fetch data from backend.
-    const teacherId = prompt("Enter your Teacher ID");
+  <section id="studentsSection">
+    <h2>Students in Your Classes</h2>
+    <ul id="studentsList"><li>Loading students...</li></ul>
+  </section>
 
-    // Simulate fetching teacher name, classes, students:
-    // Replace these with actual fetch calls to your Google Apps Script endpoints.
+  <section id="submitGradesSection">
+    <h2>Submit New Grade</h2>
+    <form id="submitGradeForm">
+      <label for="studentSelect">Student</label>
+      <select id="studentSelect" required>
+        <option value="">Select student</option>
+      </select>
 
-    async function fetchTeacherData(teacherId) {
-      // Example fetch for teacher info and classes from your API
-      // const response = await fetch(`https://your-api-url?action=getTeacherInfo&teacherId=${teacherId}`);
-      // const data = await response.json();
-      // return data;
+      <label for="subjectInput">Subject</label>
+      <input type="text" id="subjectInput" placeholder="Enter subject" required />
 
-      // Dummy static data for demo:
-      return {
-        name: "Mrs. Smith",
-        classes: ["Grade 6", "Grade 7"],
-        students: ["Alice Johnson", "Bob Lee", "Cynthia Adams"]
-      };
+      <label for="scoreInput">Score</label>
+      <input type="number" id="scoreInput" min="0" max="100" placeholder="Enter score" required />
+
+      <label for="periodSelect">Period</label>
+      <select id="periodSelect" required>
+        <option value="1">1st Period</option>
+        <option value="2">2nd Period</option>
+        <option value="3">3rd Period</option>
+        <option value="Semester Exam">Semester Exam</option>
+        <option value="Final Exam">Final Exam</option>
+      </select>
+
+      <button type="submit">Submit Grade</button>
+    </form>
+    <div id="message"></div>
+  </section>
+
+  <section id="rejectedGradesSection">
+    <h2>Rejected Grades</h2>
+    <div id="rejectedGradesList">Loading rejected grades...</div>
+  </section>
+</main>
+
+<script>
+  const API_URL = "https://script.google.com/macros/s/AKfycbw9P_XOd4k498l0e4WDbFqAF1asb2u4sRj_uX2B-2S1MvyWOeWQZqxy8dr13mPOdNOeuw/exec";
+
+  let teacherId = localStorage.getItem("teacherId");
+
+  async function fetchJSON(url, options) {
+    const resp = await fetch(url, options);
+    if (!resp.ok) throw new Error(`HTTP error! status: ${resp.status}`);
+    return resp.json();
+  }
+
+  async function getTeacherNameAndClasses() {
+    // Simulate fetch teacher details and classes (adapt your API)
+    // For demo: fetch teacher info from getTeacherList, then classes from your backend
+    // Here we mock with sample data
+    
+    // You should have an endpoint e.g. ?action=getTeacherList to get teacher name & classes
+    // For now, simulate:
+    return {
+      name: "Mrs. Smith",
+      classes: ["Grade 6", "Grade 7"]
+    };
+  }
+
+  async function getStudentsForClasses(classes) {
+    // Simulate fetch students for the classes
+    // Replace with real API calls to get students filtered by class
+
+    // Example: getStudentList returns all students, filter locally for demo:
+    const allStudents = await fetchJSON(`${API_URL}?action=getStudentList`);
+    return allStudents.students.filter(s => classes.includes(s.Class));
+  }
+
+  async function getRejectedGrades() {
+    // Fetch rejected grades for this teacher from backend
+    const url = `${API_URL}?action=getRejectedGrades&teacherId=${encodeURIComponent(teacherId)}`;
+    return fetchJSON(url);
+  }
+
+  async function populateClasses(classes) {
+    const ul = document.getElementById("classesList");
+    ul.innerHTML = "";
+    if (!classes.length) {
+      ul.innerHTML = "<li>No classes assigned</li>";
+      return;
+    }
+    classes.forEach(cls => {
+      const li = document.createElement("li");
+      li.textContent = cls;
+      ul.appendChild(li);
+    });
+  }
+
+  async function populateStudents(students) {
+    const ul = document.getElementById("studentsList");
+    const select = document.getElementById("studentSelect");
+    ul.innerHTML = "";
+    select.innerHTML = '<option value="">Select student</option>';
+
+    if (!students.length) {
+      ul.innerHTML = "<li>No students found</li>";
+      return;
     }
 
-    function populateList(elementId, items) {
-      const ul = document.getElementById(elementId);
-      ul.innerHTML = ""; // clear loading text
-      if (!items.length) {
-        ul.innerHTML = "<li>No data available</li>";
+    students.forEach(stu => {
+      const li = document.createElement("li");
+      li.textContent = `${stu.Name} (${stu.StudentID}) - Class: ${stu.Class}`;
+      ul.appendChild(li);
+
+      const option = document.createElement("option");
+      option.value = stu.StudentID;
+      option.textContent = `${stu.Name} (${stu.StudentID})`;
+      select.appendChild(option);
+    });
+  }
+
+  function createRejectedGradeEntry(grade) {
+    const div = document.createElement("div");
+    div.className = "grade-entry";
+
+    const subjectInput = document.createElement("input");
+    subjectInput.type = "text";
+    subjectInput.value = grade.Subject;
+    subjectInput.placeholder = "Subject";
+
+    const scoreInput = document.createElement("input");
+    scoreInput.type = "number";
+    scoreInput.min = 0;
+    scoreInput.max = 100;
+    scoreInput.value = grade.Score;
+    scoreInput.placeholder = "Score";
+
+    const periodInput = document.createElement("input");
+    periodInput.type = "text";
+    periodInput.value = grade.Period;
+    periodInput.placeholder = "Period";
+
+    const rejectReason = document.createElement("div");
+    rejectReason.style.color = "red";
+    rejectReason.textContent = `Reject reason: ${grade.RejectReason}`;
+
+    const saveBtn = document.createElement("button");
+    saveBtn.textContent = "Edit & Resubmit";
+
+    saveBtn.onclick = async () => {
+      // Prepare data and send editRejectedGrade POST request
+      const formData = new URLSearchParams();
+      formData.append("action", "editRejectedGrade");
+      formData.append("teacherId", teacherId);
+      formData.append("studentId", grade.StudentID);
+      formData.append("subject", subjectInput.value);
+      formData.append("score", scoreInput.value);
+      formData.append("period", periodInput.value);
+
+      document.getElementById("message").textContent = "Submitting edited grade...";
+      try {
+        const response = await fetch(API_URL, {
+          method: "POST",
+          body: formData,
+        });
+        const result = await response.json();
+        if (result.success) {
+          document.getElementById("message").textContent = "Grade resubmitted successfully!";
+          loadRejectedGrades();
+        } else {
+          document.getElementById("message").textContent = "Error: " + result.message;
+        }
+      } catch (err) {
+        document.getElementById("message").textContent = "Network error";
+      }
+    };
+
+    div.appendChild(subjectInput);
+    div.appendChild(scoreInput);
+    div.appendChild(periodInput);
+    div.appendChild(rejectReason);
+    div.appendChild(saveBtn);
+
+    return div;
+  }
+
+  async function loadRejectedGrades() {
+    const container = document.getElementById("rejectedGradesList");
+    container.innerHTML = "Loading rejected grades...";
+    try {
+      const data = await getRejectedGrades();
+      container.innerHTML = "";
+      if (!data.grades || data.grades.length === 0) {
+        container.textContent = "No rejected grades.";
         return;
       }
-      items.forEach(item => {
-        const li = document.createElement("li");
-        li.textContent = item;
-        ul.appendChild(li);
+      data.grades.forEach(grade => {
+        const gradeEntry = createRejectedGradeEntry(grade);
+        container.appendChild(gradeEntry);
       });
+    } catch (e) {
+      container.textContent = "Failed to load rejected grades.";
+    }
+  }
+
+  async function submitNewGrade(event) {
+    event.preventDefault();
+    const studentId = document.getElementById("studentSelect").value;
+    const subject = document.getElementById("subjectInput").value.trim();
+    const score = document.getElementById("scoreInput").value.trim();
+    const period = document.getElementById("periodSelect").value;
+
+    if (!studentId || !subject || !score || !period) {
+      alert("Please fill all fields.");
+      return;
     }
 
-    async function initDashboard() {
+    const formData = new URLSearchParams();
+    formData.append("action", "submitGrade");
+    formData.append("teacherId", teacherId);
+    formData.append("studentId", studentId);
+    formData.append("subject", subject);
+    formData.append("score", score);
+    formData.append("period", period);
+
+    document.getElementById("message").textContent = "Submitting grade...";
+    try {
+      const response = await fetch(API_URL, {
+        method: "POST",
+        body: formData,
+      });
+      const result = await response.json();
+      if (result.success) {
+        document.getElementById("message").textContent = "Grade submitted successfully!";
+        // Optionally reload rejected grades to show updates
+        loadRejectedGrades();
+      } else {
+        document.getElementById("message").textContent = "Error: " + result.message;
+      }
+    } catch (err) {
+      document.getElementById("message").textContent = "Network error";
+    }
+  }
+
+  async function init() {
+    if (!teacherId) {
+      teacherId = prompt("Enter your Teacher ID");
       if (!teacherId) {
-        alert("Teacher ID required!");
+        alert("Teacher ID is required to continue.");
         return;
       }
-      const data = await fetchTeacherData(teacherId);
-      document.getElementById("teacherName").textContent = data.name;
-      populateList("classesList", data.classes);
-      populateList("studentsList", data.students);
+      localStorage.setItem("teacherId", teacherId);
     }
 
-    function goToGrades() {
-      window.location.href = "grades.html?teacherId=" + encodeURIComponent(teacherId);
-    }
-    function goToRejected() {
-      window.location.href = "rejected_grades.html?teacherId=" + encodeURIComponent(teacherId);
-    }
-    function goToSubmitted() {
-      window.location.href = "submitted_grades.html?teacherId=" + encodeURIComponent(teacherId);
-    }
+    const teacherData = await getTeacherNameAndClasses(teacherId);
+    document.getElementById("teacherName").textContent = teacherData.name;
 
-    initDashboard();
-  </script>
+    await populateClasses(teacherData.classes);
+
+    const students = await getStudentsForClasses(teacherData.classes);
+    await populateStudents(students);
+
+    await loadRejectedGrades();
+  }
+
+  document.getElementById("submitGradeForm").addEventListener("submit", submitNewGrade);
+
+  init();
+</script>
+
 </body>
 </html>
