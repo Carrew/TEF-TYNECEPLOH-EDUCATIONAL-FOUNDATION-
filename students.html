@@ -1,75 +1,71 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Principal Student Management</title>
-<style>
-  body {
-    font-family: Arial, sans-serif;
-    margin: 20px;
-    background: #f7f9fc;
-  }
-  h1 {
-    text-align: center;
-    color: #004080;
-  }
-  button {
-    margin: 8px 4px;
-    padding: 8px 16px;
-    font-size: 14px;
-    cursor: pointer;
-    background-color: #0073e6;
-    color: white;
-    border: none;
-    border-radius: 4px;
-  }
-  button:hover {
-    background-color: #005bb5;
-  }
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 15px;
-    background: white;
-    border-radius: 6px;
-    overflow: hidden;
-  }
-  th, td {
-    padding: 10px;
-    border: 1px solid #ddd;
-    text-align: center;
-  }
-  th {
-    background-color: #0073e6;
-    color: white;
-  }
-  input[type="text"], select {
-    padding: 6px;
-    margin: 4px 0;
-    width: 100%;
-    box-sizing: border-box;
-  }
-  #formSection {
-    background: white;
-    padding: 15px;
-    margin-top: 20px;
-    border-radius: 6px;
-    max-width: 450px;
-  }
-  #message {
-    margin-top: 15px;
-    font-weight: bold;
-    text-align: center;
-  }
-</style>
+  <meta charset="UTF-8">
+  <title>Student Management - Principal</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background: #333;
+      color: #fff;
+      padding: 10px;
+      text-align: center;
+    }
+    main {
+      padding: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      margin-top: 15px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background: #555;
+      color: white;
+    }
+    button {
+      padding: 6px 10px;
+      margin: 2px;
+      border: none;
+      cursor: pointer;
+      background: #333;
+      color: #fff;
+    }
+    button.edit { background: #007bff; }
+    button.delete { background: #dc3545; }
+    button.add { background: #28a745; margin-top: 10px; }
+    .form-container {
+      background: #fff;
+      padding: 15px;
+      margin-top: 15px;
+    }
+    .form-container input {
+      padding: 8px;
+      margin: 5px;
+      width: calc(100% - 20px);
+    }
+  </style>
 </head>
 <body>
-  <h1>Principal Student Management</h1>
 
-  <button onclick="fetchStudents()">Refresh Student List</button>
+<header>
+  <h1>Student Management</h1>
+</header>
 
-  <table id="studentsTable" style="display:none;">
+<main>
+  <input type="text" id="search" placeholder="Search by name, class or ID" onkeyup="filterTable()">
+  <table id="studentTable">
     <thead>
       <tr>
         <th>StudentID</th>
@@ -80,149 +76,135 @@
         <th>Actions</th>
       </tr>
     </thead>
-    <tbody></tbody>
+    <tbody id="studentBody"></tbody>
   </table>
 
-  <div id="formSection">
-    <h3 id="formTitle">Add New Student</h3>
-    <form id="studentForm" onsubmit="handleSubmit(event)">
-      <input type="hidden" id="studentIdInput" />
-      <label>
-        Name:<br />
-        <input type="text" id="nameInput" required />
-      </label><br />
-      <label>
-        Class:<br />
-        <input type="text" id="classInput" required />
-      </label><br />
-      <label>
-        Status:<br />
-        <select id="statusInput" required>
-          <option value="New">New</option>
-          <option value="Old">Old</option>
-        </select>
-      </label><br /><br />
-      <button type="submit">Save Student</button>
-      <button type="button" onclick="resetForm()">Cancel</button>
-    </form>
+  <div class="form-container">
+    <h3 id="formTitle">Add Student</h3>
+    <input type="hidden" id="editIndex">
+    <input type="text" id="studentID" placeholder="Student ID">
+    <input type="text" id="pin" placeholder="PIN">
+    <input type="text" id="name" placeholder="Name">
+    <input type="text" id="class" placeholder="Class">
+    <input type="text" id="status" placeholder="Status">
+    <button class="add" onclick="saveStudent()">Save Student</button>
   </div>
-
-  <div id="message"></div>
+</main>
 
 <script>
-  const BASE_URL = 'https://script.google.com/macros/s/AKfycbw9P_XOd4k498l0e4WDbFqAF1asb2u4sRj_uX2B-2S1MvyWOeWQZqxy8dr13mPOdNOeuw/exec';
+const API_URL = "https://script.google.com/macros/s/AKfycbz-oOQuyRR5g03_SzMlYKlKrO58AH47m-xnNDqn5d0bdTyVj_X7ZRowXGCfH6OuYIo0/exec";
 
-  async function fetchStudents() {
-    clearMessage();
-    const table = document.getElementById('studentsTable');
-    const tbody = table.querySelector('tbody');
-    tbody.innerHTML = '';
-    table.style.display = 'none';
-
-    try {
-      const res = await fetch(`${BASE_URL}?action=getStudentList`);
-      const data = await res.json();
-
-      if (!data.success) {
-        showMessage(`Error: ${data.message}`, true);
-        return;
-      }
-
-      if (!data.students || data.students.length === 0) {
-        showMessage('No students found.');
-        return;
-      }
-
-      data.students.forEach(student => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${student.StudentID}</td>
-          <td>${student.PIN}</td>
-          <td>${student.Name}</td>
-          <td>${student.Class}</td>
-          <td>${student.Status}</td>
-          <td>
-            <button onclick="editStudent('${student.StudentID}', '${student.Name}', '${student.Class}', '${student.Status}')">Edit</button>
-          </td>
-        `;
-        tbody.appendChild(tr);
-      });
-
-      table.style.display = '';
-    } catch (err) {
-      showMessage('Failed to fetch students: ' + err.message, true);
-    }
-  }
-
-  function editStudent(studentId, name, className, status) {
-    document.getElementById('formTitle').textContent = 'Edit Student';
-    document.getElementById('studentIdInput').value = studentId;
-    document.getElementById('nameInput').value = name;
-    document.getElementById('classInput').value = className;
-    document.getElementById('statusInput').value = status;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-
-  function resetForm() {
-    document.getElementById('formTitle').textContent = 'Add New Student';
-    document.getElementById('studentIdInput').value = '';
-    document.getElementById('nameInput').value = '';
-    document.getElementById('classInput').value = '';
-    document.getElementById('statusInput').value = 'New';
-    clearMessage();
-  }
-
-  async function handleSubmit(event) {
-    event.preventDefault();
-    clearMessage();
-
-    const studentId = document.getElementById('studentIdInput').value.trim();
-    const name = document.getElementById('nameInput').value.trim();
-    const className = document.getElementById('classInput').value.trim();
-    const status = document.getElementById('statusInput').value;
-
-    if (!name || !className) {
-      showMessage('Name and Class are required.', true);
-      return;
-    }
-
-    const params = studentId
-      ? { action: 'updateStudent', studentId, name, className, status }
-      : { action: 'addStudent', name, className, status };
-
-    try {
-      const res = await fetch(BASE_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams(params)
-      });
-      const data = await res.json();
-
+function fetchStudents() {
+  fetch(`${API_URL}?action=getStudentList`)
+    .then(res => res.json())
+    .then(data => {
       if (data.success) {
-        showMessage(data.message || 'Operation successful.');
-        resetForm();
-        fetchStudents();
+        renderTable(data.students);
       } else {
-        showMessage('Error: ' + data.message, true);
+        alert("Error: " + data.message);
       }
-    } catch (err) {
-      showMessage('Request failed: ' + err.message, true);
-    }
+    });
+}
+
+function renderTable(students) {
+  const tbody = document.getElementById("studentBody");
+  tbody.innerHTML = "";
+  students.forEach((s, index) => {
+    tbody.innerHTML += `
+      <tr>
+        <td>${s.StudentID}</td>
+        <td>${s.PIN}</td>
+        <td>${s.Name}</td>
+        <td>${s.Class}</td>
+        <td>${s.Status}</td>
+        <td>
+          <button class="edit" onclick="editStudent(${index})">Edit</button>
+          <button class="delete" onclick="deleteStudent('${s.StudentID}')">Delete</button>
+        </td>
+      </tr>
+    `;
+  });
+  window.studentData = students;
+}
+
+function filterTable() {
+  const search = document.getElementById("search").value.toLowerCase();
+  const filtered = window.studentData.filter(s => 
+    s.StudentID.toLowerCase().includes(search) ||
+    s.Name.toLowerCase().includes(search) ||
+    s.Class.toLowerCase().includes(search)
+  );
+  renderTable(filtered);
+}
+
+function saveStudent() {
+  const id = document.getElementById("studentID").value;
+  const pin = document.getElementById("pin").value;
+  const name = document.getElementById("name").value;
+  const studentClass = document.getElementById("class").value;
+  const status = document.getElementById("status").value;
+  const editIndex = document.getElementById("editIndex").value;
+
+  let action = "addStudent";
+  if (editIndex) {
+    action = "updateStudent";
   }
 
-  function showMessage(msg, isError = false) {
-    const messageDiv = document.getElementById('message');
-    messageDiv.textContent = msg;
-    messageDiv.style.color = isError ? 'red' : 'green';
-  }
+  fetch(API_URL, {
+    method: "POST",
+    body: new URLSearchParams({
+      action,
+      StudentID: id,
+      PIN: pin,
+      Name: name,
+      Class: studentClass,
+      Status: status
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    alert(data.message);
+    fetchStudents();
+    resetForm();
+  });
+}
 
-  function clearMessage() {
-    const messageDiv = document.getElementById('message');
-    messageDiv.textContent = '';
-  }
+function editStudent(index) {
+  const s = window.studentData[index];
+  document.getElementById("formTitle").innerText = "Edit Student";
+  document.getElementById("editIndex").value = index;
+  document.getElementById("studentID").value = s.StudentID;
+  document.getElementById("pin").value = s.PIN;
+  document.getElementById("name").value = s.Name;
+  document.getElementById("class").value = s.Class;
+  document.getElementById("status").value = s.Status;
+}
 
-  // Load student list on page load
-  window.onload = fetchStudents;
+function deleteStudent(studentID) {
+  if (!confirm("Delete student?")) return;
+  fetch(API_URL, {
+    method: "POST",
+    body: new URLSearchParams({ action: "deleteStudent", StudentID: studentID })
+  })
+  .then(res => res.json())
+  .then(data => {
+    alert(data.message);
+    fetchStudents();
+  });
+}
+
+function resetForm() {
+  document.getElementById("formTitle").innerText = "Add Student";
+  document.getElementById("editIndex").value = "";
+  document.getElementById("studentID").value = "";
+  document.getElementById("pin").value = "";
+  document.getElementById("name").value = "";
+  document.getElementById("class").value = "";
+  document.getElementById("status").value = "";
+}
+
+window.onload = fetchStudents;
 </script>
+
 </body>
 </html>
