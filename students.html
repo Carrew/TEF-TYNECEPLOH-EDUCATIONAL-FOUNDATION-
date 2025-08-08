@@ -3,16 +3,29 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Principal - Manage Students</title>
+<title>Principal Student Management</title>
 <style>
   body {
     font-family: Arial, sans-serif;
     margin: 20px;
-    background: #f3f6fb;
+    background: #f7f9fc;
   }
   h1 {
     text-align: center;
-    color: #004a99;
+    color: #004080;
+  }
+  button {
+    margin: 8px 4px;
+    padding: 8px 16px;
+    font-size: 14px;
+    cursor: pointer;
+    background-color: #0073e6;
+    color: white;
+    border: none;
+    border-radius: 4px;
+  }
+  button:hover {
+    background-color: #005bb5;
   }
   table {
     width: 100%;
@@ -23,81 +36,39 @@
     overflow: hidden;
   }
   th, td {
-    padding: 8px;
+    padding: 10px;
     border: 1px solid #ddd;
     text-align: center;
   }
   th {
-    background-color: #004a99;
+    background-color: #0073e6;
     color: white;
   }
   input[type="text"], select {
-    padding: 5px;
-    font-size: 14px;
+    padding: 6px;
+    margin: 4px 0;
     width: 100%;
     box-sizing: border-box;
   }
-  button {
-    margin: 10px 0;
-    padding: 8px 15px;
-    font-size: 16px;
-    cursor: pointer;
-    background-color: #0066cc;
-    border: none;
-    border-radius: 4px;
-    color: white;
-  }
-  button:hover {
-    background-color: #004a99;
+  #formSection {
+    background: white;
+    padding: 15px;
+    margin-top: 20px;
+    border-radius: 6px;
+    max-width: 450px;
   }
   #message {
+    margin-top: 15px;
+    font-weight: bold;
     text-align: center;
-    margin-top: 10px;
-    font-weight: bold;
-  }
-  .edit-btn, .save-btn {
-    cursor: pointer;
-    color: #0066cc;
-    background: none;
-    border: none;
-    font-weight: bold;
-  }
-  .save-btn {
-    color: green;
   }
 </style>
 </head>
 <body>
+  <h1>Principal Student Management</h1>
 
-<h1>Principal - Manage Students</h1>
+  <button onclick="fetchStudents()">Refresh Student List</button>
 
-<div>
-  <h3>Add New Student</h3>
-  <form id="addStudentForm">
-    <label>
-      Name:<br />
-      <input type="text" id="newName" required />
-    </label><br /><br />
-    <label>
-      Class:<br />
-      <input type="text" id="newClass" required />
-    </label><br /><br />
-    <label>
-      Status:<br />
-      <select id="newStatus" required>
-        <option value="">--Select Status--</option>
-        <option value="New">New</option>
-        <option value="Old">Old</option>
-      </select>
-    </label><br /><br />
-    <button type="submit">Add Student</button>
-  </form>
-</div>
-
-<hr />
-
-<div>
-  <h3>Existing Students</h3>
   <table id="studentsTable" style="display:none;">
     <thead>
       <tr>
@@ -106,14 +77,37 @@
         <th>Name</th>
         <th>Class</th>
         <th>Status</th>
-        <th>Edit</th>
+        <th>Actions</th>
       </tr>
     </thead>
     <tbody></tbody>
   </table>
-</div>
 
-<div id="message"></div>
+  <div id="formSection">
+    <h3 id="formTitle">Add New Student</h3>
+    <form id="studentForm" onsubmit="handleSubmit(event)">
+      <input type="hidden" id="studentIdInput" />
+      <label>
+        Name:<br />
+        <input type="text" id="nameInput" required />
+      </label><br />
+      <label>
+        Class:<br />
+        <input type="text" id="classInput" required />
+      </label><br />
+      <label>
+        Status:<br />
+        <select id="statusInput" required>
+          <option value="New">New</option>
+          <option value="Old">Old</option>
+        </select>
+      </label><br /><br />
+      <button type="submit">Save Student</button>
+      <button type="button" onclick="resetForm()">Cancel</button>
+    </form>
+  </div>
+
+  <div id="message"></div>
 
 <script>
   const BASE_URL = 'https://script.google.com/macros/s/AKfycbw9P_XOd4k498l0e4WDbFqAF1asb2u4sRj_uX2B-2S1MvyWOeWQZqxy8dr13mPOdNOeuw/exec';
@@ -130,7 +124,7 @@
       const data = await res.json();
 
       if (!data.success) {
-        showMessage('Error: ' + data.message, true);
+        showMessage(`Error: ${data.message}`, true);
         return;
       }
 
@@ -141,124 +135,78 @@
 
       data.students.forEach(student => {
         const tr = document.createElement('tr');
-        tr.dataset.studentId = student.StudentID;
-
         tr.innerHTML = `
           <td>${student.StudentID}</td>
           <td>${student.PIN}</td>
-          <td class="name-cell">${escapeHtml(student.Name)}</td>
-          <td class="class-cell">${escapeHtml(student.Class)}</td>
+          <td>${student.Name}</td>
+          <td>${student.Class}</td>
           <td>${student.Status}</td>
           <td>
-            <button class="edit-btn" onclick="startEdit(this)">Edit</button>
+            <button onclick="editStudent('${student.StudentID}', '${student.Name}', '${student.Class}', '${student.Status}')">Edit</button>
           </td>
         `;
-
         tbody.appendChild(tr);
       });
 
       table.style.display = '';
     } catch (err) {
-      showMessage('Failed to load students: ' + err.message, true);
+      showMessage('Failed to fetch students: ' + err.message, true);
     }
   }
 
-  document.getElementById('addStudentForm').addEventListener('submit', async e => {
-    e.preventDefault();
+  function editStudent(studentId, name, className, status) {
+    document.getElementById('formTitle').textContent = 'Edit Student';
+    document.getElementById('studentIdInput').value = studentId;
+    document.getElementById('nameInput').value = name;
+    document.getElementById('classInput').value = className;
+    document.getElementById('statusInput').value = status;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function resetForm() {
+    document.getElementById('formTitle').textContent = 'Add New Student';
+    document.getElementById('studentIdInput').value = '';
+    document.getElementById('nameInput').value = '';
+    document.getElementById('classInput').value = '';
+    document.getElementById('statusInput').value = 'New';
+    clearMessage();
+  }
+
+  async function handleSubmit(event) {
+    event.preventDefault();
     clearMessage();
 
-    const name = document.getElementById('newName').value.trim();
-    const studentClass = document.getElementById('newClass').value.trim();
-    const status = document.getElementById('newStatus').value;
+    const studentId = document.getElementById('studentIdInput').value.trim();
+    const name = document.getElementById('nameInput').value.trim();
+    const className = document.getElementById('classInput').value.trim();
+    const status = document.getElementById('statusInput').value;
 
-    if (!name || !studentClass || !status) {
-      showMessage('Please fill in all fields.', true);
+    if (!name || !className) {
+      showMessage('Name and Class are required.', true);
       return;
     }
+
+    const params = studentId
+      ? { action: 'updateStudent', studentId, name, className, status }
+      : { action: 'addStudent', name, className, status };
 
     try {
       const res = await fetch(BASE_URL, {
         method: 'POST',
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: new URLSearchParams({
-          action: 'addStudent',
-          name,
-          class: studentClass,
-          status
-        })
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams(params)
       });
-
       const data = await res.json();
+
       if (data.success) {
-        showMessage('Student added successfully.');
-        e.target.reset();
+        showMessage(data.message || 'Operation successful.');
+        resetForm();
         fetchStudents();
       } else {
-        showMessage('Failed to add student: ' + data.message, true);
+        showMessage('Error: ' + data.message, true);
       }
     } catch (err) {
-      showMessage('Error: ' + err.message, true);
-    }
-  });
-
-  function startEdit(button) {
-    const tr = button.closest('tr');
-    const nameCell = tr.querySelector('.name-cell');
-    const classCell = tr.querySelector('.class-cell');
-
-    const currentName = nameCell.textContent;
-    const currentClass = classCell.textContent;
-
-    nameCell.innerHTML = `<input type="text" value="${escapeHtml(currentName)}" />`;
-    classCell.innerHTML = `<input type="text" value="${escapeHtml(currentClass)}" />`;
-
-    button.textContent = 'Save';
-    button.classList.remove('edit-btn');
-    button.classList.add('save-btn');
-    button.onclick = () => saveEdit(button, tr.dataset.studentId);
-  }
-
-  async function saveEdit(button, studentId) {
-    const tr = button.closest('tr');
-    const nameInput = tr.querySelector('.name-cell input');
-    const classInput = tr.querySelector('.class-cell input');
-
-    const newName = nameInput.value.trim();
-    const newClass = classInput.value.trim();
-
-    if (!newName || !newClass) {
-      showMessage('Name and Class cannot be empty.', true);
-      return;
-    }
-
-    try {
-      const res = await fetch(BASE_URL, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: new URLSearchParams({
-          action: 'updateStudent',
-          studentId,
-          name: newName,
-          class: newClass
-        })
-      });
-
-      const data = await res.json();
-      if (data.success) {
-        showMessage('Student updated successfully.');
-        // Update cells back to text
-        tr.querySelector('.name-cell').textContent = newName;
-        tr.querySelector('.class-cell').textContent = newClass;
-
-        button.textContent = 'Edit';
-        button.classList.remove('save-btn');
-        button.classList.add('edit-btn');
-        button.onclick = () => startEdit(button);
-      } else {
-        showMessage('Failed to update student: ' + data.message, true);
-      }
-    } catch (err) {
-      showMessage('Error: ' + err.message, true);
+      showMessage('Request failed: ' + err.message, true);
     }
   }
 
@@ -269,25 +217,12 @@
   }
 
   function clearMessage() {
-    showMessage('');
+    const messageDiv = document.getElementById('message');
+    messageDiv.textContent = '';
   }
 
-  // Simple HTML escape to avoid injection in inputs
-  function escapeHtml(text) {
-    return text.replace(/[&<>"']/g, function (m) {
-      return ({
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#39;'
-      })[m];
-    });
-  }
-
-  // Initial load
-  fetchStudents();
+  // Load student list on page load
+  window.onload = fetchStudents;
 </script>
-
 </body>
-          </html>
+</html>
