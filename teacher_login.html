@@ -117,8 +117,12 @@
         if (data.success) {
           result.style.color = 'green';
           result.textContent = `Login successful! Welcome, ${data.name}`;
+
+          // Save teacherId in localStorage
+          localStorage.setItem('teacherId', teacherId);
+
           setTimeout(() => {
-            window.location.href = `teacher_dashboard.html?teacherId=${encodeURIComponent(teacherId)}`;
+            window.location.href = 'teacher_dashboard.html';
           }, 1000);
         } else {
           result.style.color = 'red';
