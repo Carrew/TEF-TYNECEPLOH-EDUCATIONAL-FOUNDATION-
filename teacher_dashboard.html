@@ -62,11 +62,13 @@
 
   let assignedStudents = [];
 
-  // On page load: fill teacherId input from localStorage and auto-load students
+  // On page load: fill teacherId input from localStorage, make it read-only and auto-load students
   window.addEventListener('DOMContentLoaded', () => {
     const savedTeacherId = localStorage.getItem('teacherId');
     if (savedTeacherId) {
-      document.getElementById('teacherId').value = savedTeacherId;
+      const teacherInput = document.getElementById('teacherId');
+      teacherInput.value = savedTeacherId;
+      teacherInput.readOnly = true;  // Make ID input non-editable
       loadAssignedStudents();
     }
   });
