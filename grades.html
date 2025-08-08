@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Principal Grade Management</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background: #f9f9f9;
+    }
+    h1 {
+      text-align: center;
+      color: #003f7d;
+    }
+    button {
+      margin: 5px;
+      padding: 10px 15px;
+      font-size: 16px;
+      cursor: pointer;
+      background-color: #00529b;
+      border: none;
+      border-radius: 4px;
+      color: white;
+    }
+    button:hover {
+      background-color: #003f7d;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+      background: white;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    th, td {
+      padding: 8px;
+      border: 1px solid #ddd;
+      text-align: center;
+    }
+    th {
+      background-color: #00529b;
+      color: white;
+    }
+    #message {
+      margin-top: 15px;
+      font-weight: bold;
+      color: green;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>Principal Grade Management</h1>
+
+  <div style="text-align: center;">
+    <button onclick="loadGrades('getSubmittedGrades')">View Submitted Grades</button>
+    <button onclick="loadGrades('getApprovedGradesAdmin')">View Approved Grades</button>
+    <button onclick="loadGrades('getRejectedGrades')">View Rejected Grades</button>
+  </div>
+
+  <div id="message"></div>
+
+  <table id="gradesTable" style="display:none;">
+    <thead>
+      <tr>
+        <th>StudentID</th>
+        <th>Subject</th>
+        <th>Score</th>
+        <th>Period</th>
+        <th>TeacherID</th>
+        <th>Status</th>
+        <th>Reject Reason</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    const BASE_URL = 'https://script.google.com/macros/s/AKfycbw9P_XOd4k498l0e4WDbFqAF1asb2u4sRj_uX2B-2S1MvyWOeWQZqxy8dr13mPOdNOeuw/exec';
+
+    async function loadGrades(action) {
+      clearMessage();
+      const table = document.getElementById('gradesTable');
+      const tbody = table.querySelector('tbody');
+      tbody.innerHTML = '';
+      table.style.display = 'none';
+
+      try {
+        const res = await fetch(`${BASE_URL}?action=${action}`);
+        const data = await res.json();
+
+        if (!data.success) {
+          showMessage(`Error: ${data.message}`, true);
+          return;
+        }
+
+        if (!data.grades || data.grades.length === 0) {
+          showMessage('No grades found for this category.');
+          return;
+        }
+
+        data.grades.forEach(grade => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${grade.StudentID}</td>
+            <td>${grade.Subject}</td>
+            <td>${grade.Score}</td>
+            <td>${grade.Period}</td>
+            <td>${grade.TeacherID}</td>
+            <td>${grade.Status}</td>
+            <td>${grade.RejectReason || ''}</td>
+            <td>
+              ${grade.Status === 'Submitted' ? `
+                <button onclick="approveGrade('${grade.StudentID}', '${grade.Subject}', '${grade.Period}', '${grade.TeacherID}')">Approve</button>
+                <button onclick="rejectGrade('${grade.StudentID}', '${grade.Subject}', '${grade.Period}', '${grade.TeacherID}')">Reject</button>
+              ` : ''}
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        table.style.display = '';
+      } catch (err) {
+        showMessage('Failed to load grades: ' + err.message, true);
+      }
+    }
+
+    async function approveGrade(studentId, subject, period, teacherId) {
+      clearMessage();
+      try {
+        const res = await fetch(BASE_URL, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+          body: new URLSearchParams({
+            action: 'approveGrades',
+            studentId,
+            subject,
+            period,
+            teacherId
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showMessage('Grade approved successfully.');
+          loadGrades('getSubmittedGrades');
+        } else {
+          showMessage('Failed to approve grade: ' + data.message, true);
+        }
+      } catch (err) {
+        showMessage('Error: ' + err.message, true);
+      }
+    }
+
+    async function rejectGrade(studentId, subject, period, teacherId) {
+      clearMessage();
+      const reason = prompt('Enter reason for rejection:');
+      if (!reason) {
+        showMessage('Rejection cancelled.');
+        return;
+      }
+      try {
+        const res = await fetch(BASE_URL, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+          body: new URLSearchParams({
+            action: 'rejectGrades',
+            studentId,
+            subject,
+            period,
+            teacherId,
+            rejectReason: reason
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showMessage('Grade rejected successfully.');
+          loadGrades('getSubmittedGrades');
+        } else {
+          showMessage('Failed to reject grade: ' + data.message, true);
+        }
+      } catch (err) {
+        showMessage('Error: ' + err.message, true);
+      }
+    }
+
+    function showMessage(msg, isError = false) {
+      const messageDiv = document.getElementById('message');
+      messageDiv.textContent = msg;
+      messageDiv.style.color = isError ? 'red' : 'green';
+    }
+
+    function clearMessage() {
+      const messageDiv = document.getElementById('message');
+      messageDiv.textContent = '';
+    }
+  </script>
+</body>
+  </html>
