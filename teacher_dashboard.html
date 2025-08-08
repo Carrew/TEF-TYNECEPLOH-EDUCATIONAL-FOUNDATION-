@@ -1,139 +1,197 @@
-<!DOCTYPE html>  
-<html lang="en">  
-<head>  
-  <meta charset="UTF-8" />  
-  <title>Teacher Login</title>  
-  <meta name="viewport" content="width=device-width, initial-scale=1" />  
-  <style>  
-    * {  
-      box-sizing: border-box;  
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;  
-    }  
-    body {  
-      margin: 0;  
-      padding: 0;  
-      background: linear-gradient(135deg, #e3f2fd, #bbdefb);  
-      display: flex;  
-      justify-content: center;  
-      align-items: center;  
-      height: 100vh;  
-    }  
-    .login-container {  
-      background: #ffffff;  
-      padding: 40px 30px;  
-      border-radius: 12px;  
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);  
-      width: 100%;  
-      max-width: 400px;  
-    }  
-    h2 {  
-      text-align: center;  
-      color: #1976d2;  
-      margin-bottom: 20px;  
-    }  
-    label {  
-      font-weight: bold;  
-      color: #333;  
-      display: block;  
-      margin-top: 10px;  
-    }  
-    input {  
-      width: 100%;  
-      padding: 10px;  
-      margin: 10px 0 20px 0;  
-      border: 1px solid #ccc;  
-      border-radius: 8px;  
-      font-size: 15px;  
-    }  
-    button {  
-      width: 100%;  
-      background-color: #1976d2;  
-      color: white;  
-      border: none;  
-      padding: 12px;  
-      border-radius: 8px;  
-      font-size: 16px;  
-      cursor: pointer;  
-      transition: background-color 0.3s;  
-    }  
-    button:hover {  
-      background-color: #0d47a1;  
-    }  
-    #result {  
-      text-align: center;  
-      margin-top: 15px;  
-      font-size: 15px;  
-    }  
-    @media (max-width: 480px) {  
-      .login-container {  
-        padding: 30px 20px;  
-      }  
-    }  
-  </style>  
-</head>  
-<body>  
-  <div class="login-container">  
-    <h2>Teacher Login</h2>  
-  
-    <label for="teacherId">Teacher ID</label>  
-    <input type="text" id="teacherId" placeholder="Enter your Teacher ID" />  
-  
-    <label for="pin">PIN</label>  
-    <input type="password" id="pin" placeholder="Enter your PIN" />  
-  
-    <button onclick="login()">Login</button>  
-    <p id="result"></p>  
-  </div>  
-  
-  <script>  
-    async function login() {  
-      const teacherId = document.getElementById('teacherId').value.trim();  
-      const pin = document.getElementById('pin').value.trim();  
-      const result = document.getElementById('result');  
-  
-      if (!teacherId || !pin) {  
-        result.style.color = 'red';  
-        result.textContent = 'Please enter both Teacher ID and PIN.';  
-        return;  
-      }  
-  
-      const url = 'https://script.google.com/macros/s/AKfycbw9P_XOd4k498l0e4WDbFqAF1asb2u4sRj_uX2B-2S1MvyWOeWQZqxy8dr13mPOdNOeuw/exec';  
-  
-      const formData = new URLSearchParams();  
-      formData.append('action', 'login');  
-      formData.append('role', 'teacher');  
-      formData.append('id', teacherId);  
-      formData.append('pin', pin);  
-  
-      try {  
-        const response = await fetch(url, {  
-          method: 'POST',  
-          body: formData  
-        });  
-  
-        const data = await response.json();  
-  
-        if (data.success) {  
-          result.style.color = 'green';  
-          result.textContent = `Login successful! Welcome, ${data.name}`;  
-  
-          // Save teacherId and name in localStorage  
-          localStorage.setItem('teacherId', teacherId);  
-          localStorage.setItem('teacherName', data.name);  
-  
-          setTimeout(() => {  
-            window.location.href = 'teacher_dashboard.html';  
-          }, 1000);  
-        } else {  
-          result.style.color = 'red';  
-          result.textContent = data.message;  
-        }  
-      } catch (error) {  
-        result.style.color = 'red';  
-        result.textContent = 'Network error or server issue.';  
-        console.error(error);  
-      }  
-    }  
-  </script>  
-</body>  
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Teacher Dashboard - Submit Grades</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #fce4ec, #880e4f);
+      color: #330014;
+      margin: 0;
+      padding: 20px;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+    .container {
+      background: #fff0f6;
+      padding: 30px 40px;
+      border-radius: 15px;
+      box-shadow: 0 6px 15px rgba(136, 14, 79, 0.3);
+      max-width: 500px;
+      width: 100%;
+    }
+    h1 {
+      text-align: center;
+      color: #880e4f;
+      margin-bottom: 25px;
+    }
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+    select, input[type="text"], input[type="number"] {
+      width: 100%;
+      padding: 10px 12px;
+      margin-bottom: 18px;
+      border-radius: 8px;
+      border: 1.5px solid #880e4f;
+      font-size: 16px;
+      outline: none;
+      transition: border-color 0.3s ease;
+    }
+    select:focus, input[type="text"]:focus, input[type="number"]:focus {
+      border-color: #ad1457;
+    }
+    button {
+      width: 100%;
+      background-color: #ad1457;
+      border: none;
+      padding: 14px 0;
+      border-radius: 10px;
+      color: white;
+      font-weight: 700;
+      font-size: 18px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #880e4f;
+    }
+    #message {
+      text-align: center;
+      margin-top: 15px;
+      font-weight: 600;
+      min-height: 24px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Submit Student Grade</h1>
+
+    <label for="studentSelect">Select Student</label>
+    <select id="studentSelect">
+      <option value="">Loading students...</option>
+    </select>
+
+    <label for="periodSelect">Select Period</label>
+    <select id="periodSelect">
+      <option value="1st Period">1st Period</option>
+      <option value="2nd Period">2nd Period</option>
+      <option value="3rd Period">3rd Period</option>
+      <option value="Exam">Exam</option>
+      <option value="4th Period">4th Period</option>
+      <option value="5th Period">5th Period</option>
+      <option value="6th Period">6th Period</option>
+      <option value="Final Exam">Final Exam</option>
+    </select>
+
+    <label for="subjectInput">Subject</label>
+    <input type="text" id="subjectInput" placeholder="Enter Subject" />
+
+    <label for="scoreInput">Score</label>
+    <input type="number" id="scoreInput" placeholder="Enter Score" min="0" max="100" step="0.01" />
+
+    <button id="submitBtn" onclick="submitGrade()">Submit Grade</button>
+
+    <div id="message"></div>
+  </div>
+
+  <script>
+    const API_URL = 'https://script.google.com/macros/s/AKfycbw9P_XOd4k498l0e4WDbFqAF1asb2u4sRj_uX2B-2S1MvyWOeWQZqxy8dr13mPOdNOeuw/exec';
+
+    let teacherId = localStorage.getItem('teacherId');
+
+    const studentSelect = document.getElementById('studentSelect');
+    const periodSelect = document.getElementById('periodSelect');
+    const subjectInput = document.getElementById('subjectInput');
+    const scoreInput = document.getElementById('scoreInput');
+    const messageDiv = document.getElementById('message');
+    const submitBtn = document.getElementById('submitBtn');
+
+    if (!teacherId) {
+      alert('No teacher ID found. Please login first.');
+      window.location.href = 'teacher_login.html';  // redirect to login
+    } else {
+      loadStudents();
+    }
+
+    async function loadStudents() {
+      studentSelect.innerHTML = '<option>Loading students...</option>';
+
+      try {
+        const res = await fetch(`${API_URL}?action=getStudentsForTeacher&teacherId=${encodeURIComponent(teacherId)}`);
+        const data = await res.json();
+        if (data.success && data.students.length) {
+          studentSelect.innerHTML = '';
+          data.students.forEach(student => {
+            const option = document.createElement('option');
+            option.value = student.StudentID;
+            option.textContent = `${student.Name} (${student.StudentID})`;
+            studentSelect.appendChild(option);
+          });
+        } else {
+          studentSelect.innerHTML = '<option value="">No students found</option>';
+        }
+      } catch (err) {
+        studentSelect.innerHTML = '<option value="">Error loading students</option>';
+        console.error(err);
+      }
+    }
+
+    async function submitGrade() {
+      const studentId = studentSelect.value;
+      const period = periodSelect.value;
+      const subject = subjectInput.value.trim();
+      const score = scoreInput.value.trim();
+
+      if (!studentId || !period || !subject || !score) {
+        messageDiv.style.color = 'red';
+        messageDiv.textContent = 'Please fill all fields.';
+        return;
+      }
+
+      messageDiv.style.color = 'black';
+      messageDiv.textContent = 'Loading...';
+      submitBtn.disabled = true;
+
+      const formData = new URLSearchParams();
+      formData.append('action', 'submitGrade');
+      formData.append('teacherId', teacherId);
+      formData.append('studentId', studentId);
+      formData.append('period', period);
+      formData.append('subject', subject);
+      formData.append('score', score);
+
+      try {
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          messageDiv.style.color = 'green';
+          messageDiv.textContent = 'Grade submitted successfully!';
+          subjectInput.value = '';
+          scoreInput.value = '';
+        } else {
+          messageDiv.style.color = 'red';
+          messageDiv.textContent = 'Error: ' + data.message;
+        }
+      } catch (error) {
+        messageDiv.style.color = 'red';
+        messageDiv.textContent = 'Network error. Please try again.';
+        console.error(error);
+      } finally {
+        submitBtn.disabled = false;
+      }
+    }
+  </script>
+</body>
 </html>
