@@ -1,64 +1,82 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Principal Grade Management</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
-      background: #f9f9f9;
-    }
-    h1 {
-      text-align: center;
-      color: #003f7d;
-    }
-    button {
-      margin: 5px;
-      padding: 10px 15px;
-      font-size: 16px;
-      cursor: pointer;
-      background-color: #00529b;
-      border: none;
-      border-radius: 4px;
-      color: white;
-    }
-    button:hover {
-      background-color: #003f7d;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 15px;
-      background: white;
-      border-radius: 6px;
-      overflow: hidden;
-    }
-    th, td {
-      padding: 8px;
-      border: 1px solid #ddd;
-      text-align: center;
-    }
-    th {
-      background-color: #00529b;
-      color: white;
-    }
-    #message {
-      margin-top: 15px;
-      font-weight: bold;
-      color: green;
-      text-align: center;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Principal Grades Management</title>
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 20px;
+    background-color: #f4f6f8;
+    color: #222;
+  }
+  h1 {
+    text-align: center;
+    color: #1a3e72;
+  }
+  #buttons {
+    text-align: center;
+    margin-bottom: 15px;
+  }
+  button {
+    margin: 0 8px 12px;
+    padding: 10px 18px;
+    font-size: 16px;
+    border: none;
+    border-radius: 5px;
+    background-color: #1a3e72;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  button:hover {
+    background-color: #16335a;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: white;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 0 8px rgba(0,0,0,0.1);
+  }
+  th, td {
+    padding: 12px 10px;
+    border: 1px solid #ddd;
+    text-align: center;
+    font-size: 14px;
+  }
+  th {
+    background-color: #1a3e72;
+    color: white;
+  }
+  td button {
+    background-color: #2e7d32;
+    font-size: 13px;
+    padding: 6px 12px;
+  }
+  td button.reject-btn {
+    background-color: #c62828;
+  }
+  td button:hover {
+    opacity: 0.85;
+  }
+  #message {
+    margin: 15px 0;
+    text-align: center;
+    font-weight: 600;
+    min-height: 24px;
+  }
+</style>
 </head>
 <body>
-  <h1>Principal Grade Management</h1>
+  <h1>Principal Grades Management</h1>
 
-  <div style="text-align: center;">
-    <button onclick="loadGrades('getSubmittedGrades')">View Submitted Grades</button>
-    <button onclick="loadGrades('getApprovedGradesAdmin')">View Approved Grades</button>
-    <button onclick="loadGrades('getRejectedGrades')">View Rejected Grades</button>
+  <div id="buttons">
+    <button onclick="loadGrades('getSubmittedGrades')">Submitted Grades</button>
+    <button onclick="loadGrades('getApprovedGradesAdmin')">Approved Grades</button>
+    <button onclick="loadGrades('getRejectedGrades')">Rejected Grades</button>
   </div>
 
   <div id="message"></div>
@@ -66,11 +84,12 @@
   <table id="gradesTable" style="display:none;">
     <thead>
       <tr>
-        <th>StudentID</th>
+        <th>Student ID</th>
+        <th>Name</th>
         <th>Subject</th>
         <th>Score</th>
         <th>Period</th>
-        <th>TeacherID</th>
+        <th>Teacher ID</th>
         <th>Status</th>
         <th>Reject Reason</th>
         <th>Actions</th>
@@ -82,12 +101,14 @@
   <script>
     const BASE_URL = 'https://script.google.com/macros/s/AKfycbw9P_XOd4k498l0e4WDbFqAF1asb2u4sRj_uX2B-2S1MvyWOeWQZqxy8dr13mPOdNOeuw/exec';
 
+    const messageDiv = document.getElementById('message');
+    const gradesTable = document.getElementById('gradesTable');
+    const tbody = gradesTable.querySelector('tbody');
+
     async function loadGrades(action) {
       clearMessage();
-      const table = document.getElementById('gradesTable');
-      const tbody = table.querySelector('tbody');
       tbody.innerHTML = '';
-      table.style.display = 'none';
+      gradesTable.style.display = 'none';
 
       try {
         const res = await fetch(`${BASE_URL}?action=${action}`);
@@ -99,33 +120,36 @@
         }
 
         if (!data.grades || data.grades.length === 0) {
-          showMessage('No grades found for this category.');
+          showMessage('No grades found.');
           return;
         }
 
         data.grades.forEach(grade => {
           const tr = document.createElement('tr');
+
           tr.innerHTML = `
-            <td>${grade.studentId}</td>
-            <td>${grade.subject}</td>
-            <td>${grade.score}</td>
-            <td>${grade.period}</td>
-            <td>${grade.teacherId}</td>
-            <td>${grade.status}</td>
-            <td>${grade.rejectReason || ''}</td>
+            <td>${escapeHTML(grade.studentId)}</td>
+            <td>${escapeHTML(grade.name || '')}</td>
+            <td>${escapeHTML(grade.subject)}</td>
+            <td>${escapeHTML(grade.score)}</td>
+            <td>${escapeHTML(grade.period)}</td>
+            <td>${escapeHTML(grade.teacherId)}</td>
+            <td>${escapeHTML(grade.status)}</td>
+            <td>${escapeHTML(grade.rejectReason || '')}</td>
             <td>
               ${grade.status === 'Submitted' ? `
                 <button onclick="approveGrade(${grade.row})">Approve</button>
-                <button onclick="rejectGrade(${grade.row})">Reject</button>
+                <button class="reject-btn" onclick="rejectGrade(${grade.row})">Reject</button>
               ` : ''}
             </td>
           `;
+
           tbody.appendChild(tr);
         });
 
-        table.style.display = '';
-      } catch (err) {
-        showMessage('Failed to load grades: ' + err.message, true);
+        gradesTable.style.display = '';
+      } catch (error) {
+        showMessage('Failed to load grades: ' + error.message, true);
       }
     }
 
@@ -141,24 +165,26 @@
           })
         });
         const data = await res.json();
+
         if (data.success) {
           showMessage('Grade approved successfully.');
           loadGrades('getSubmittedGrades');
         } else {
           showMessage('Failed to approve grade: ' + data.message, true);
         }
-      } catch (err) {
-        showMessage('Error: ' + err.message, true);
+      } catch (error) {
+        showMessage('Error: ' + error.message, true);
       }
     }
 
     async function rejectGrade(row) {
       clearMessage();
-      const reason = prompt('Enter reason for rejection:');
+      const reason = prompt('Please enter the reason for rejection:');
       if (!reason) {
         showMessage('Rejection cancelled.');
         return;
       }
+
       try {
         const res = await fetch(BASE_URL, {
           method: 'POST',
@@ -170,26 +196,36 @@
           })
         });
         const data = await res.json();
+
         if (data.success) {
           showMessage('Grade rejected successfully.');
           loadGrades('getSubmittedGrades');
         } else {
           showMessage('Failed to reject grade: ' + data.message, true);
         }
-      } catch (err) {
-        showMessage('Error: ' + err.message, true);
+      } catch (error) {
+        showMessage('Error: ' + error.message, true);
       }
     }
 
     function showMessage(msg, isError = false) {
-      const messageDiv = document.getElementById('message');
       messageDiv.textContent = msg;
       messageDiv.style.color = isError ? 'red' : 'green';
     }
 
     function clearMessage() {
-      const messageDiv = document.getElementById('message');
       messageDiv.textContent = '';
+    }
+
+    // Basic HTML escape to avoid injection
+    function escapeHTML(str) {
+      if (!str) return '';
+      return str.toString()
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
     }
   </script>
 </body>
