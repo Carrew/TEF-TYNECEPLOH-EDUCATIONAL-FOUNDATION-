@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Principal Announcements Management</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    max-width: 900px;
+  }
+  h1 {
+    text-align: center;
+  }
+  #error {
+    color: red;
+    margin-top: 10px;
+    text-align: center;
+  }
+  #success {
+    color: green;
+    margin-top: 10px;
+    text-align: center;
+  }
+  form > div {
+    margin-bottom: 10px;
+  }
+  form label {
+    display: inline-block;
+    width: 90px;
+    font-weight: bold;
+  }
+  form input[type="text"],
+  form textarea {
+    width: 100%;
+    padding: 6px;
+    box-sizing: border-box;
+  }
+  textarea {
+    resize: vertical;
+    min-height: 60px;
+  }
+  button {
+    padding: 6px 12px;
+    margin: 4px 2px;
+    cursor: pointer;
+  }
+  .btn-add {
+    background-color: #28a745;
+    color: white;
+    border: none;
+  }
+  .btn-edit {
+    background-color: #007bff;
+    color: white;
+    border: none;
+  }
+  .btn-delete {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+  }
+  th, td {
+    border: 1px solid #ccc;
+    padding: 8px 12px;
+    text-align: left;
+    vertical-align: middle;
+  }
+  th {
+    background-color: #f3f3f3;
+  }
+</style>
+</head>
+<body>
+
+<h1>Principal Announcements</h1>
+
+<div id="error"></div>
+<div id="success"></div>
+
+<!-- Add/Edit Announcement Form -->
+<form id="announcementForm">
+  <input type="hidden" id="announcementId" />
+  <div>
+    <label for="title">Title *</label>
+    <input type="text" id="title" required />
+  </div>
+  <div>
+    <label for="message">Message *</label>
+    <textarea id="message" required></textarea>
+  </div>
+  <button type="submit" class="btn-add" id="submitBtn">Add Announcement</button>
+  <button type="button" id="cancelBtn" style="display:none;">Cancel</button>
+</form>
+
+<!-- Announcements Table -->
+<table id="announcementsTable">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Date</th>
+      <th>Title</th>
+      <th>Message</th>
+      <th>Timestamp</th>
+      <th>Status</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<script>
+  const baseUrl = "https://script.google.com/macros/s/AKfycbw9P_XOd4k498l0e4WDbFqAF1asb2u4sRj_uX2B-2S1MvyWOeWQZqxy8dr13mPOdNOeuw/exec";
+
+  const errorDiv = document.getElementById('error');
+  const successDiv = document.getElementById('success');
+  const form = document.getElementById('announcementForm');
+  const announcementIdInput = document.getElementById('announcementId');
+  const titleInput = document.getElementById('title');
+  const messageInput = document.getElementById('message');
+  const submitBtn = document.getElementById('submitBtn');
+  const cancelBtn = document.getElementById('cancelBtn');
+  const tbody = document.querySelector('#announcementsTable tbody');
+
+  function clearMessages() {
+    errorDiv.textContent = '';
+    successDiv.textContent = '';
+  }
+
+  async function fetchAnnouncements() {
+    clearMessages();
+    try {
+      const res = await fetch(`${baseUrl}?action=getAnnouncements`);
+      if (!res.ok) throw new Error('Network response was not ok');
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message || 'Failed to load announcements');
+
+      tbody.innerHTML = '';
+      data.announcements.forEach(a => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${a.AnnouncementID || '-'}</td>
+          <td>${a.Date || '-'}</td>
+          <td>${a.Title || '-'}</td>
+          <td>${a.Message || '-'}</td>
+          <td>${a.Timestamp ? new Date(a.Timestamp).toLocaleString() : '-'}</td>
+          <td>${a.Status || '-'}</td>
+          <td>
+            <button class="btn-edit" data-id="${a.AnnouncementID}">Edit</button>
+            <button class="btn-delete" data-id="${a.AnnouncementID}">Delete</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      attachRowListeners();
+    } catch (err) {
+      errorDiv.textContent = 'Error loading announcements: ' + err.message;
+    }
+  }
+
+  // Add or Edit Announcement
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    clearMessages();
+
+    const announcementId = announcementIdInput.value;
+    const title = titleInput.value.trim();
+    const message = messageInput.value.trim();
+
+    if (!title || !message) {
+      errorDiv.textContent = 'Title and message are required.';
+      return;
+    }
+
+    let action = announcementId ? 'editAnnouncement' : 'addAnnouncement';
+    let params = new URLSearchParams();
+    params.append('action', action);
+    params.append('title', title);
+    params.append('message', message);
+    if (announcementId) params.append('announcementId', announcementId);
+
+    try {
+      const res = await fetch(baseUrl, {
+        method: 'POST',
+        body: params
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message || 'Failed to save announcement');
+
+      successDiv.textContent = `Announcement ${announcementId ? 'updated' : 'added'} successfully!`;
+      form.reset();
+      announcementIdInput.value = '';
+      submitBtn.textContent = 'Add Announcement';
+      cancelBtn.style.display = 'none';
+      fetchAnnouncements();
+    } catch (err) {
+      errorDiv.textContent = 'Error saving announcement: ' + err.message;
+    }
+  });
+
+  // Cancel edit
+  cancelBtn.addEventListener('click', () => {
+    clearMessages();
+    form.reset();
+    announcementIdInput.value = '';
+    submitBtn.textContent = 'Add Announcement';
+    cancelBtn.style.display = 'none';
+  });
+
+  function attachRowListeners() {
+    document.querySelectorAll('.btn-edit').forEach(btn => {
+      btn.onclick = () => {
+        clearMessages();
+        const id = btn.dataset.id;
+        const row = btn.closest('tr');
+        announcementIdInput.value = id;
+        titleInput.value = row.children[2].textContent;
+        messageInput.value = row.children[3].textContent;
+        submitBtn.textContent = 'Update Announcement';
+        cancelBtn.style.display = 'inline-block';
+      };
+    });
+
+    document.querySelectorAll('.btn-delete').forEach(btn => {
+      btn.onclick = async () => {
+        clearMessages();
+        if (!confirm('Are you sure you want to delete this announcement?')) return;
+        const id = btn.dataset.id;
+
+        const params = new URLSearchParams();
+        params.append('action', 'deleteAnnouncement');
+        params.append('announcementId', id);
+
+        try {
+          const res = await fetch(baseUrl, {
+            method: 'POST',
+            body: params
+          });
+          const data = await res.json();
+          if (!data.success) throw new Error(data.message || 'Failed to delete announcement');
+          successDiv.textContent = 'Announcement deleted successfully!';
+          fetchAnnouncements();
+        } catch (err) {
+          errorDiv.textContent = 'Error deleting announcement: ' + err.message;
+        }
+      };
+    });
+  }
+
+  // Initial load
+  fetchAnnouncements();
+</script>
+
+</body>
+    </html>
