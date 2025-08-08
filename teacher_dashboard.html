@@ -1,125 +1,160 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
   <title>Teacher Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    h2 { color: #333; }
-    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-    th { background: #f4f4f4; }
-    .section { margin-bottom: 30px; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #ffc0cb, #800000);
+      margin: 0;
+      min-height: 100vh;
+      color: #400000;
+    }
+    header {
+      background-color: #800000;
+      color: #fff;
+      padding: 20px;
+      text-align: center;
+      font-size: 24px;
+      font-weight: 700;
+    }
+    main {
+      padding: 20px;
+      max-width: 900px;
+      margin: 20px auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    h2 {
+      color: #800000;
+      margin-top: 0;
+    }
+    section {
+      margin-bottom: 30px;
+    }
+    ul {
+      list-style: none;
+      padding-left: 0;
+    }
+    li {
+      background: #ffe6f0;
+      margin-bottom: 8px;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #d46a6a;
+      font-weight: 600;
+    }
+    button {
+      background-color: #800000;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-right: 15px;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #b22222;
+    }
+    #welcomeMsg {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 20px;
+    }
   </style>
 </head>
 <body>
+  <header>
+    Teacher Dashboard
+  </header>
+  <main>
+    <div id="welcomeMsg">Welcome, <span id="teacherName">Teacher</span>!</div>
 
-  <h2>Teacher Dashboard</h2>
-  <p id="welcomeText"></p>
+    <section>
+      <h2>Your Classes</h2>
+      <ul id="classesList">
+        <li>Loading classes...</li>
+      </ul>
+    </section>
 
-  <div class="section">
-    <h3>Your Submitted Grades (Pending Approval)</h3>
-    <table id="submittedTable">
-      <thead>
-        <tr>
-          <th>Student ID</th>
-          <th>Subject</th>
-          <th>Score</th>
-          <th>Period</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
+    <section>
+      <h2>Students in Your Classes</h2>
+      <ul id="studentsList">
+        <li>Loading students...</li>
+      </ul>
+    </section>
 
-  <div class="section">
-    <h3>Your Approved Grades</h3>
-    <table id="approvedTable">
-      <thead>
-        <tr>
-          <th>Student ID</th>
-          <th>Subject</th>
-          <th>Score</th>
-          <th>Period</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
+    <section>
+      <h2>Actions</h2>
+      <button onclick="goToGrades()">Manage Grades</button>
+      <button onclick="goToRejected()">Rejected Grades</button>
+      <button onclick="goToSubmitted()">Submitted Grades</button>
+    </section>
+  </main>
 
-  <div class="section">
-    <h3>Your Rejected Grades</h3>
-    <table id="rejectedTable">
-      <thead>
-        <tr>
-          <th>Student ID</th>
-          <th>Subject</th>
-          <th>Score</th>
-          <th>Period</th>
-          <th>Reason</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
+  <script>
+    // Placeholder: You will replace with actual teacher ID and fetch data from backend.
+    const teacherId = prompt("Enter your Teacher ID");
 
-<script>
-const SCRIPT_URL = "YOUR_ROUTER_GS_DEPLOY_URL"; // Replace with your router.gs URL
+    // Simulate fetching teacher name, classes, students:
+    // Replace these with actual fetch calls to your Google Apps Script endpoints.
 
-document.addEventListener("DOMContentLoaded", () => {
-  const urlParams = new URLSearchParams(window.location.search);
-  const teacherId = urlParams.get("teacherId");
+    async function fetchTeacherData(teacherId) {
+      // Example fetch for teacher info and classes from your API
+      // const response = await fetch(`https://your-api-url?action=getTeacherInfo&teacherId=${teacherId}`);
+      // const data = await response.json();
+      // return data;
 
-  if (!teacherId) {
-    alert("Teacher ID missing. Please log in again.");
-    window.location.href = "teacher_login.html";
-    return;
-  }
+      // Dummy static data for demo:
+      return {
+        name: "Mrs. Smith",
+        classes: ["Grade 6", "Grade 7"],
+        students: ["Alice Johnson", "Bob Lee", "Cynthia Adams"]
+      };
+    }
 
-  document.getElementById("welcomeText").textContent = `Welcome, Teacher ${teacherId}`;
-  
-  getSubmittedGrades(teacherId);
-  getApprovedGrades(teacherId);
-  getRejectedGrades(teacherId);
-});
+    function populateList(elementId, items) {
+      const ul = document.getElementById(elementId);
+      ul.innerHTML = ""; // clear loading text
+      if (!items.length) {
+        ul.innerHTML = "<li>No data available</li>";
+        return;
+      }
+      items.forEach(item => {
+        const li = document.createElement("li");
+        li.textContent = item;
+        ul.appendChild(li);
+      });
+    }
 
-function getSubmittedGrades(teacherId) {
-  fetch(`${SCRIPT_URL}?action=viewSubmittedGrades&TeacherID=${encodeURIComponent(teacherId)}`)
-    .then(res => res.json())
-    .then(data => fillTable("submittedTable", data));
-}
+    async function initDashboard() {
+      if (!teacherId) {
+        alert("Teacher ID required!");
+        return;
+      }
+      const data = await fetchTeacherData(teacherId);
+      document.getElementById("teacherName").textContent = data.name;
+      populateList("classesList", data.classes);
+      populateList("studentsList", data.students);
+    }
 
-function getApprovedGrades(teacherId) {
-  fetch(`${SCRIPT_URL}?action=getTeacherGrades&TeacherID=${encodeURIComponent(teacherId)}`)
-    .then(res => res.json())
-    .then(data => fillTable("approvedTable", data));
-}
+    function goToGrades() {
+      window.location.href = "grades.html?teacherId=" + encodeURIComponent(teacherId);
+    }
+    function goToRejected() {
+      window.location.href = "rejected_grades.html?teacherId=" + encodeURIComponent(teacherId);
+    }
+    function goToSubmitted() {
+      window.location.href = "submitted_grades.html?teacherId=" + encodeURIComponent(teacherId);
+    }
 
-function getRejectedGrades(teacherId) {
-  fetch(`${SCRIPT_URL}?action=getRejectedGrades&TeacherID=${encodeURIComponent(teacherId)}`)
-    .then(res => res.json())
-    .then(data => fillTable("rejectedTable", data, true));
-}
-
-function fillTable(tableId, data, includeReason = false) {
-  const tbody = document.querySelector(`#${tableId} tbody`);
-  tbody.innerHTML = "";
-  if (!data || data.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="${includeReason ? 5 : 4}">No records found</td></tr>`;
-    return;
-  }
-  data.forEach(row => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${row.StudentID}</td>
-      <td>${row.Subject}</td>
-      <td>${row.Score}</td>
-      <td>${row.Period}</td>
-      ${includeReason ? `<td>${row.RejectReason || ""}</td>` : ""}
-    `;
-    tbody.appendChild(tr);
-  });
-}
-</script>
-
+    initDashboard();
+  </script>
 </body>
 </html>
