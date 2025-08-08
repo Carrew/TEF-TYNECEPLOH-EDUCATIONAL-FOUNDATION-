@@ -1,105 +1,371 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Teacher Dashboard - Submit Grades</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Teacher Dashboard</title>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 900px; margin: 30px auto; background: #fafafa; padding: 20px; }
+  h1,h2 { color: #222; }
+  .section { background: #fff; padding: 18px; margin-bottom: 30px; border-radius: 6px; box-shadow: 0 1px 5px rgba(0,0,0,0.1); }
+  label { display: block; margin-top: 12px; }
+  input, select, button { width: 100%; padding: 8px; margin-top: 6px; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box; }
+  button { background-color: #0077cc; color: white; font-weight: bold; border: none; cursor: pointer; margin-top: 12px; }
+  button:hover { background-color: #005fa3; }
+  table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+  th, td { border: 1px solid #ddd; padding: 9px; text-align: left; }
+  th { background: #f4f4f4; }
+  .error { color: #d33; margin-top: 6px; }
+  #logoutBtn { background-color: #d9534f; margin-bottom: 20px; }
+  #logoutBtn:hover { background-color: #b52b27; }
+</style>
 </head>
 <body>
-  <h1>Submit Grades</h1>
 
-  <label for="studentSelect">Select Student:</label>
-  <select id="studentSelect">
-    <option value="">Loading students...</option>
-  </select>
+<h1>Teacher Dashboard</h1>
 
-  <label for="subject">Subject:</label>
-  <input type="text" id="subject">
+<!-- Login Section -->
+<div id="loginSection">
+  <label for="teacherIdInput">Teacher ID:</label>
+  <input type="text" id="teacherIdInput" placeholder="Enter your Teacher ID" />
+  <label for="pinInput">PIN:</label>
+  <input type="password" id="pinInput" placeholder="Enter your PIN" />
+  <button id="loginBtn">Login</button>
+  <div id="loginError" class="error"></div>
+</div>
 
-  <label for="score">Score:</label>
-  <input type="number" id="score" min="0" max="100">
+<!-- Dashboard Section -->
+<div id="dashboard" style="display:none;">
+  <button id="logoutBtn">Logout</button>
 
-  <label for="period">Period:</label>
-  <select id="period">
-    <option value="1st Period">1st Period</option>
-    <option value="2nd Period">2nd Period</option>
-    <option value="3rd Period">3rd Period</option>
-    <option value="Exam">Exam</option>
-    <option value="4th Period">4th Period</option>
-    <option value="5th Period">5th Period</option>
-    <option value="6th Period">6th Period</option>
-    <option value="Final Exam">Final Exam</option>
-  </select>
+  <div class="section" id="submitGradeSection">
+    <h2>Submit Grade</h2>
+    <label for="studentSelect">Student:</label>
+    <select id="studentSelect"><option>Loading students...</option></select>
 
-  <button onclick="submitGrade()">Submit Grade</button>
+    <label for="subjectInput">Subject:</label>
+    <input type="text" id="subjectInput" placeholder="e.g., Mathematics" />
 
-  <script>
-    const scriptUrl = "https://script.google.com/macros/s/AKfycbw9P_XOd4k498l0e4WDbFqAF1asb2u4sRj_uX2B-2S1MvyWOeWQZqxy8dr13mPOdNOeuw/exec";
-    let teacherId = null;
+    <label for="scoreInput">Score (0-100):</label>
+    <input type="number" id="scoreInput" min="0" max="100" />
 
-    // Load students assigned to this teacher
-    function loadStudents() {
-      fetch(`${scriptUrl}?action=getAssignedStudents&teacherId=${teacherId}`)
-        .then(res => res.json())
-        .then(data => {
-          const select = document.getElementById("studentSelect");
-          select.innerHTML = "";
-          if (data.success && data.students.length > 0) {
-            data.students.forEach(student => {
-              let option = document.createElement("option");
-              option.value = student.StudentID;
-              option.textContent = student.Name;
-              select.appendChild(option);
+    <label for="periodSelect">Period:</label>
+    <select id="periodSelect">
+      <option value="1st Period">1st Period</option>
+      <option value="2nd Period">2nd Period</option>
+      <option value="3rd Period">3rd Period</option>
+      <option value="Exam">Exam</option>
+      <option value="4th Period">4th Period</option>
+      <option value="5th Period">5th Period</option>
+      <option value="6th Period">6th Period</option>
+      <option value="Final Exam">Final Exam</option>
+    </select>
+
+    <button id="submitGradeBtn">Submit Grade</button>
+    <div id="submitGradeError" class="error"></div>
+  </div>
+
+  <div class="section" id="submittedGradesSection">
+    <h2>Submitted Grades</h2>
+    <table id="gradesTable">
+      <thead>
+        <tr>
+          <th>Student</th>
+          <th>Subject</th>
+          <th>Period</th>
+          <th>Score</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td colspan="5">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section" id="rejectedGradesSection">
+    <h2>Rejected Grades - Edit & Resubmit</h2>
+    <table id="rejectedGradesTable">
+      <thead>
+        <tr>
+          <th>Student</th>
+          <th>Subject</th>
+          <th>Period</th>
+          <th>Current Score</th>
+          <th>Reject Reason</th>
+          <th>Edit Score</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td colspan="7">Loading...</td></tr>
+      </tbody>
+    </table>
+    <div id="editRejectedError" class="error"></div>
+  </div>
+</div>
+
+<script>
+  const scriptUrl = "https://script.google.com/macros/s/AKfycbw9P_XOd4k498l0e4WDbFqAF1asb2u4sRj_uX2B-2S1MvyWOeWQZqxy8dr13mPOdNOeuw/exec";
+
+  const loginSection = document.getElementById('loginSection');
+  const dashboard = document.getElementById('dashboard');
+  const loginBtn = document.getElementById('loginBtn');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const teacherIdInput = document.getElementById('teacherIdInput');
+  const pinInput = document.getElementById('pinInput');
+  const loginError = document.getElementById('loginError');
+
+  const studentSelect = document.getElementById('studentSelect');
+  const subjectInput = document.getElementById('subjectInput');
+  const scoreInput = document.getElementById('scoreInput');
+  const periodSelect = document.getElementById('periodSelect');
+  const submitGradeBtn = document.getElementById('submitGradeBtn');
+  const submitGradeError = document.getElementById('submitGradeError');
+
+  const gradesTableBody = document.querySelector('#gradesTable tbody');
+  const rejectedGradesTableBody = document.querySelector('#rejectedGradesTable tbody');
+  const editRejectedError = document.getElementById('editRejectedError');
+
+  let teacherId = localStorage.getItem('teacherId');
+
+  // On page load, check if teacher is logged in
+  if (teacherId) {
+    showDashboard();
+    loadStudents();
+    loadSubmittedGrades();
+    loadRejectedGrades();
+  }
+
+  // Login handler: validates TeacherID and PIN via backend (authLogin)
+  loginBtn.addEventListener('click', () => {
+    loginError.textContent = '';
+    const id = teacherIdInput.value.trim();
+    const pin = pinInput.value.trim();
+    if (!id || !pin) {
+      loginError.textContent = 'Please enter Teacher ID and PIN.';
+      return;
+    }
+
+    // Validate login using backend
+    const formData = new FormData();
+    formData.append('action', 'login');
+    formData.append('teacherId', id);
+    formData.append('pin', pin);
+
+    fetch(scriptUrl, { method: 'POST', body: formData })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          teacherId = id;
+          localStorage.setItem('teacherId', teacherId);
+          showDashboard();
+          loadStudents();
+          loadSubmittedGrades();
+          loadRejectedGrades();
+        } else {
+          loginError.textContent = 'Login failed: ' + data.message;
+        }
+      })
+      .catch(err => {
+        loginError.textContent = 'Error connecting to server.';
+        console.error(err);
+      });
+  });
+
+  logoutBtn.addEventListener('click', () => {
+    localStorage.removeItem('teacherId');
+    teacherId = null;
+    dashboard.style.display = 'none';
+    loginSection.style.display = 'block';
+    teacherIdInput.value = '';
+    pinInput.value = '';
+  });
+
+  function showDashboard() {
+    loginSection.style.display = 'none';
+    dashboard.style.display = 'block';
+  }
+
+  // Load students assigned to teacher (filtered by classes handled in backend)
+  function loadStudents() {
+    studentSelect.innerHTML = '<option>Loading students...</option>';
+    fetch(`${scriptUrl}?action=getStudentList&teacherId=${encodeURIComponent(teacherId)}`)
+      .then(res => res.json())
+      .then(data => {
+        if(data.success && data.students && data.students.length) {
+          studentSelect.innerHTML = '<option value="">-- Select Student --</option>';
+          data.students.forEach(student => {
+            const option = document.createElement('option');
+            option.value = student.StudentID;
+            option.textContent = student.Name;
+            studentSelect.appendChild(option);
+          });
+        } else {
+          studentSelect.innerHTML = '<option value="">No students assigned</option>';
+        }
+      })
+      .catch(err => {
+        console.error('Error loading students:', err);
+        studentSelect.innerHTML = '<option value="">Error loading students</option>';
+      });
+  }
+
+  // Load grades submitted by this teacher
+  function loadSubmittedGrades() {
+    gradesTableBody.innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
+    fetch(`${scriptUrl}?action=getTeacherGrades&teacherId=${encodeURIComponent(teacherId)}`)
+      .then(res => res.json())
+      .then(data => {
+        if(data.success && data.grades && data.grades.length) {
+          gradesTableBody.innerHTML = '';
+          data.grades.forEach(grade => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td>${grade.StudentID || ''} - ${grade.StudentName || '-'}</td>
+              <td>${grade.Subject || grade.subject || '-'}</td>
+              <td>${grade.Period || grade.period || '-'}</td>
+              <td>${grade.Score || grade.score || '-'}</td>
+              <td>${grade.Status || '-'}</td>
+            `;
+            gradesTableBody.appendChild(tr);
+          });
+        } else {
+          gradesTableBody.innerHTML = '<tr><td colspan="5">No submitted grades found.</td></tr>';
+        }
+      })
+      .catch(err => {
+        console.error('Error loading submitted grades:', err);
+        gradesTableBody.innerHTML = '<tr><td colspan="5" style="color:red;">Error loading grades.</td></tr>';
+      });
+  }
+
+  // Load rejected grades to edit and resubmit
+  function loadRejectedGrades() {
+    rejectedGradesTableBody.innerHTML = '<tr><td colspan="7">Loading...</td></tr>';
+    fetch(`${scriptUrl}?action=getRejectedGrades&teacherId=${encodeURIComponent(teacherId)}`)
+      .then(res => res.json())
+      .then(data => {
+        if(data.success && data.rejectedGrades && data.rejectedGrades.length) {
+          rejectedGradesTableBody.innerHTML = '';
+          data.rejectedGrades.forEach((grade, index) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td>${grade.StudentID || ''} - ${grade.StudentName || '-'}</td>
+              <td>${grade.Subject || grade.subject || '-'}</td>
+              <td>${grade.Period || grade.period || '-'}</td>
+              <td>${grade.Score || grade.score || '-'}</td>
+              <td>${grade.RejectReason || '-'}</td>
+              <td><input type="number" id="editScore${index}" min="0" max="100" value="${grade.Score || grade.score || 0}" style="width: 80px;" /></td>
+              <td><button data-index="${index}" class="saveRejectedBtn">Save</button></td>
+            `;
+            rejectedGradesTableBody.appendChild(tr);
+          });
+
+          // Add save button handlers
+          document.querySelectorAll('.saveRejectedBtn').forEach(btn => {
+            btn.addEventListener('click', () => {
+              const idx = btn.getAttribute('data-index');
+              saveEditedRejectedGrade(idx, data.rejectedGrades[idx]);
             });
-          } else {
-            let option = document.createElement("option");
-            option.textContent = "No students assigned";
-            select.appendChild(option);
-          }
-        })
-        .catch(err => console.error(err));
+          });
+        } else {
+          rejectedGradesTableBody.innerHTML = '<tr><td colspan="7">No rejected grades found.</td></tr>';
+        }
+      })
+      .catch(err => {
+        console.error('Error loading rejected grades:', err);
+        rejectedGradesTableBody.innerHTML = '<tr><td colspan="7" style="color:red;">Error loading rejected grades.</td></tr>';
+      });
+  }
+
+  // Submit new grade
+  submitGradeBtn.addEventListener('click', () => {
+    submitGradeError.textContent = '';
+    const studentId = studentSelect.value;
+    const subject = subjectInput.value.trim();
+    const score = scoreInput.value.trim();
+    const period = periodSelect.value;
+
+    if(!studentId || !subject || !score) {
+      submitGradeError.textContent = 'Please fill all fields.';
+      return;
     }
 
-    // Submit grade
-    function submitGrade() {
-      const studentId = document.getElementById("studentSelect").value;
-      const subject = document.getElementById("subject").value.trim();
-      const score = document.getElementById("score").value.trim();
-      const period = document.getElementById("period").value;
-
-      if (!studentId || !subject || !score) {
-        alert("Please fill all fields");
-        return;
-      }
-
-      const formData = new FormData();
-      formData.append("action", "submitGrade");
-      formData.append("teacherId", teacherId);
-      formData.append("studentId", studentId);
-      formData.append("subject", subject);
-      formData.append("score", score);
-      formData.append("period", period);
-
-      fetch(scriptUrl, { method: "POST", body: formData })
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            alert("Grade submitted successfully!");
-          } else {
-            alert("Error: " + data.message);
-          }
-        })
-        .catch(err => console.error(err));
+    if(score < 0 || score > 100) {
+      submitGradeError.textContent = 'Score must be between 0 and 100.';
+      return;
     }
 
-    // On page load
-    document.addEventListener("DOMContentLoaded", () => {
-      teacherId = localStorage.getItem("teacherId");
-      if (!teacherId) {
-        alert("Teacher ID missing. Please login again.");
-        window.location.href = "teacher_login.html";
-        return;
-      }
-      loadStudents();
-    });
-  </script>
+    const formData = new FormData();
+    formData.append('action', 'submitGrade');
+    formData.append('teacherId', teacherId);
+    formData.append('studentId', studentId);
+    formData.append('subject', subject);
+    formData.append('score', score);
+    formData.append('period', period);
+
+    fetch(scriptUrl, { method: 'POST', body: formData })
+      .then(res => res.json())
+      .then(data => {
+        if(data.success) {
+          alert('Grade submitted successfully!');
+          // Clear inputs and reload grades
+          subjectInput.value = '';
+          scoreInput.value = '';
+          studentSelect.value = '';
+          loadSubmittedGrades();
+          loadRejectedGrades();
+        } else {
+          submitGradeError.textContent = 'Error: ' + data.message;
+        }
+      })
+      .catch(err => {
+        submitGradeError.textContent = 'Error submitting grade.';
+        console.error(err);
+      });
+  });
+
+  // Save edited rejected grade
+  function saveEditedRejectedGrade(index, grade) {
+    editRejectedError.textContent = '';
+    const input = document.getElementById(`editScore${index}`);
+    const newScore = input.value.trim();
+
+    if(newScore === '') {
+      editRejectedError.textContent = 'Score cannot be empty.';
+      return;
+    }
+    if(newScore < 0 || newScore > 100) {
+      editRejectedError.textContent = 'Score must be between 0 and 100.';
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('action', 'editRejectedGrade');
+    formData.append('teacherId', teacherId);
+    formData.append('studentId', grade.StudentID || grade.studentId);
+    formData.append('subject', grade.Subject || grade.subject);
+    formData.append('score', newScore);
+    formData.append('period', grade.Period || grade.period);
+
+    fetch(scriptUrl, { method: 'POST', body: formData })
+      .then(res => res.json())
+      .then(data => {
+        if(data.success) {
+          alert('Rejected grade updated and resubmitted!');
+          loadSubmittedGrades();
+          loadRejectedGrades();
+        } else {
+          editRejectedError.textContent = 'Error: ' + data.message;
+        }
+      })
+      .catch(err => {
+        editRejectedError.textContent = 'Error updating rejected grade.';
+        console.error(err);
+      });
+  }
+</script>
+
 </body>
-</html>
+  </html>
