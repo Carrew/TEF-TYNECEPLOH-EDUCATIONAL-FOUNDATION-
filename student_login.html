@@ -5,15 +5,77 @@
   <title>Student Login</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    /* Your existing styles here (optional) */
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #ffc0cb, #800000); /* pink to maroon */
+      height: 100vh;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .login-container {
+      background: white;
+      padding: 30px 25px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+      width: 100%;
+      max-width: 360px;
+    }
+    h2 {
+      color: #800000;
+      text-align: center;
+      margin-bottom: 20px;
+      font-weight: 700;
+    }
+    label {
+      font-weight: 600;
+      color: #800000;
+      display: block;
+      margin: 12px 0 6px;
+    }
+    input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1.5px solid #800000;
+      border-radius: 8px;
+      font-size: 16px;
+      outline-color: #ffb6c1;
+      transition: border-color 0.3s ease;
+    }
+    input:focus {
+      border-color: #ffb6c1;
+    }
+    button {
+      width: 100%;
+      margin-top: 20px;
+      background-color: #800000;
+      color: white;
+      border: none;
+      padding: 14px;
+      border-radius: 8px;
+      font-size: 18px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #b22222;
+    }
+    #result {
+      margin-top: 15px;
+      font-size: 15px;
+      text-align: center;
+      font-weight: 600;
+    }
   </style>
 </head>
 <body>
   <div class="login-container">
     <h2>Student Login</h2>
 
-    <label for="userId">Student ID</label>
-    <input type="text" id="userId" placeholder="Enter your Student ID" />
+    <label for="studentId">Student ID</label>
+    <input type="text" id="studentId" placeholder="Enter your Student ID" />
 
     <label for="pin">PIN</label>
     <input type="password" id="pin" placeholder="Enter your PIN" />
@@ -24,24 +86,25 @@
 
   <script>
     async function login() {
-      const userId = document.getElementById('userId').value.trim();
+      const studentId = document.getElementById('studentId').value.trim();
       const pin = document.getElementById('pin').value.trim();
       const result = document.getElementById('result');
 
-      if (!userId || !pin) {
+      if (!studentId || !pin) {
         result.style.color = 'red';
         result.textContent = 'Please enter both Student ID and PIN.';
         return;
       }
 
-      // Your router URL:
+      result.style.color = '#800000';
+      result.textContent = 'Loading...';
+
       const url = 'https://script.google.com/macros/s/AKfycbw9P_XOd4k498l0e4WDbFqAF1asb2u4sRj_uX2B-2S1MvyWOeWQZqxy8dr13mPOdNOeuw/exec';
 
-      // Add action=login for router to know it's a login request
       const formData = new URLSearchParams();
-      formData.append('action', 'login');   // <-- THIS IS CRUCIAL
+      formData.append('action', 'login');
       formData.append('role', 'student');
-      formData.append('id', userId);
+      formData.append('id', studentId);
       formData.append('pin', pin);
 
       try {
@@ -55,9 +118,11 @@
         if (data.success) {
           result.style.color = 'green';
           result.textContent = `Login successful! Welcome, ${data.name}`;
-          // Redirect to student dashboard, pass userId
+          // Save student id if you want in localStorage/sessionStorage here (optional)
+          // localStorage.setItem('studentId', studentId);
+
           setTimeout(() => {
-            window.location.href = `student_dashboard.html?userId=${encodeURIComponent(userId)}`;
+            window.location.href = 'student_dashboard.html';
           }, 1000);
         } else {
           result.style.color = 'red';
