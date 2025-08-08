@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Principal - Manage Students</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    background: #f3f6fb;
+  }
+  h1 {
+    text-align: center;
+    color: #004a99;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+    background: white;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  th, td {
+    padding: 8px;
+    border: 1px solid #ddd;
+    text-align: center;
+  }
+  th {
+    background-color: #004a99;
+    color: white;
+  }
+  input[type="text"], select {
+    padding: 5px;
+    font-size: 14px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  button {
+    margin: 10px 0;
+    padding: 8px 15px;
+    font-size: 16px;
+    cursor: pointer;
+    background-color: #0066cc;
+    border: none;
+    border-radius: 4px;
+    color: white;
+  }
+  button:hover {
+    background-color: #004a99;
+  }
+  #message {
+    text-align: center;
+    margin-top: 10px;
+    font-weight: bold;
+  }
+  .edit-btn, .save-btn {
+    cursor: pointer;
+    color: #0066cc;
+    background: none;
+    border: none;
+    font-weight: bold;
+  }
+  .save-btn {
+    color: green;
+  }
+</style>
+</head>
+<body>
+
+<h1>Principal - Manage Students</h1>
+
+<div>
+  <h3>Add New Student</h3>
+  <form id="addStudentForm">
+    <label>
+      Name:<br />
+      <input type="text" id="newName" required />
+    </label><br /><br />
+    <label>
+      Class:<br />
+      <input type="text" id="newClass" required />
+    </label><br /><br />
+    <label>
+      Status:<br />
+      <select id="newStatus" required>
+        <option value="">--Select Status--</option>
+        <option value="New">New</option>
+        <option value="Old">Old</option>
+      </select>
+    </label><br /><br />
+    <button type="submit">Add Student</button>
+  </form>
+</div>
+
+<hr />
+
+<div>
+  <h3>Existing Students</h3>
+  <table id="studentsTable" style="display:none;">
+    <thead>
+      <tr>
+        <th>StudentID</th>
+        <th>PIN</th>
+        <th>Name</th>
+        <th>Class</th>
+        <th>Status</th>
+        <th>Edit</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<div id="message"></div>
+
+<script>
+  const BASE_URL = 'https://script.google.com/macros/s/AKfycbw9P_XOd4k498l0e4WDbFqAF1asb2u4sRj_uX2B-2S1MvyWOeWQZqxy8dr13mPOdNOeuw/exec';
+
+  async function fetchStudents() {
+    clearMessage();
+    const table = document.getElementById('studentsTable');
+    const tbody = table.querySelector('tbody');
+    tbody.innerHTML = '';
+    table.style.display = 'none';
+
+    try {
+      const res = await fetch(`${BASE_URL}?action=getStudentList`);
+      const data = await res.json();
+
+      if (!data.success) {
+        showMessage('Error: ' + data.message, true);
+        return;
+      }
+
+      if (!data.students || data.students.length === 0) {
+        showMessage('No students found.');
+        return;
+      }
+
+      data.students.forEach(student => {
+        const tr = document.createElement('tr');
+        tr.dataset.studentId = student.StudentID;
+
+        tr.innerHTML = `
+          <td>${student.StudentID}</td>
+          <td>${student.PIN}</td>
+          <td class="name-cell">${escapeHtml(student.Name)}</td>
+          <td class="class-cell">${escapeHtml(student.Class)}</td>
+          <td>${student.Status}</td>
+          <td>
+            <button class="edit-btn" onclick="startEdit(this)">Edit</button>
+          </td>
+        `;
+
+        tbody.appendChild(tr);
+      });
+
+      table.style.display = '';
+    } catch (err) {
+      showMessage('Failed to load students: ' + err.message, true);
+    }
+  }
+
+  document.getElementById('addStudentForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    clearMessage();
+
+    const name = document.getElementById('newName').value.trim();
+    const studentClass = document.getElementById('newClass').value.trim();
+    const status = document.getElementById('newStatus').value;
+
+    if (!name || !studentClass || !status) {
+      showMessage('Please fill in all fields.', true);
+      return;
+    }
+
+    try {
+      const res = await fetch(BASE_URL, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: new URLSearchParams({
+          action: 'addStudent',
+          name,
+          class: studentClass,
+          status
+        })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        showMessage('Student added successfully.');
+        e.target.reset();
+        fetchStudents();
+      } else {
+        showMessage('Failed to add student: ' + data.message, true);
+      }
+    } catch (err) {
+      showMessage('Error: ' + err.message, true);
+    }
+  });
+
+  function startEdit(button) {
+    const tr = button.closest('tr');
+    const nameCell = tr.querySelector('.name-cell');
+    const classCell = tr.querySelector('.class-cell');
+
+    const currentName = nameCell.textContent;
+    const currentClass = classCell.textContent;
+
+    nameCell.innerHTML = `<input type="text" value="${escapeHtml(currentName)}" />`;
+    classCell.innerHTML = `<input type="text" value="${escapeHtml(currentClass)}" />`;
+
+    button.textContent = 'Save';
+    button.classList.remove('edit-btn');
+    button.classList.add('save-btn');
+    button.onclick = () => saveEdit(button, tr.dataset.studentId);
+  }
+
+  async function saveEdit(button, studentId) {
+    const tr = button.closest('tr');
+    const nameInput = tr.querySelector('.name-cell input');
+    const classInput = tr.querySelector('.class-cell input');
+
+    const newName = nameInput.value.trim();
+    const newClass = classInput.value.trim();
+
+    if (!newName || !newClass) {
+      showMessage('Name and Class cannot be empty.', true);
+      return;
+    }
+
+    try {
+      const res = await fetch(BASE_URL, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: new URLSearchParams({
+          action: 'updateStudent',
+          studentId,
+          name: newName,
+          class: newClass
+        })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        showMessage('Student updated successfully.');
+        // Update cells back to text
+        tr.querySelector('.name-cell').textContent = newName;
+        tr.querySelector('.class-cell').textContent = newClass;
+
+        button.textContent = 'Edit';
+        button.classList.remove('save-btn');
+        button.classList.add('edit-btn');
+        button.onclick = () => startEdit(button);
+      } else {
+        showMessage('Failed to update student: ' + data.message, true);
+      }
+    } catch (err) {
+      showMessage('Error: ' + err.message, true);
+    }
+  }
+
+  function showMessage(msg, isError = false) {
+    const messageDiv = document.getElementById('message');
+    messageDiv.textContent = msg;
+    messageDiv.style.color = isError ? 'red' : 'green';
+  }
+
+  function clearMessage() {
+    showMessage('');
+  }
+
+  // Simple HTML escape to avoid injection in inputs
+  function escapeHtml(text) {
+    return text.replace(/[&<>"']/g, function (m) {
+      return ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      })[m];
+    });
+  }
+
+  // Initial load
+  fetchStudents();
+</script>
+
+</body>
+          </html>
