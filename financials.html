@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Financial Records Management</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    max-width: 900px;
+  }
+  h1 {
+    text-align: center;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+  }
+  th, td {
+    border: 1px solid #ccc;
+    padding: 8px 12px;
+    text-align: left;
+    vertical-align: middle;
+  }
+  th {
+    background-color: #f3f3f3;
+  }
+  input[type="text"], input[type="number"] {
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .btn {
+    padding: 6px 12px;
+    margin: 2px;
+    cursor: pointer;
+  }
+  .btn-add {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    font-weight: bold;
+  }
+  .btn-save {
+    background-color: #007bff;
+    color: white;
+    border: none;
+  }
+  .btn-cancel {
+    background-color: #6c757d;
+    color: white;
+    border: none;
+  }
+  .btn-delete {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+  }
+  #error {
+    color: red;
+    margin-top: 10px;
+    text-align: center;
+  }
+  #success {
+    color: green;
+    margin-top: 10px;
+    text-align: center;
+  }
+  form > div {
+    margin-bottom: 10px;
+  }
+  form label {
+    display: inline-block;
+    width: 110px;
+    font-weight: bold;
+  }
+  form input {
+    padding: 6px;
+  }
+  #addForm {
+    border: 1px solid #ccc;
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+  }
+</style>
+</head>
+<body>
+
+<h1>Financial Records Management</h1>
+
+<div id="error"></div>
+<div id="success"></div>
+
+<!-- Add New Financial Record Form -->
+<form id="addForm">
+  <h3>Add New Financial Record</h3>
+  <div>
+    <label for="name">Name *</label>
+    <input type="text" id="name" required />
+  </div>
+  <div>
+    <label for="purpose">Purpose *</label>
+    <input type="text" id="purpose" required />
+  </div>
+  <div>
+    <label for="amountDue">Amount Due *</label>
+    <input type="number" id="amountDue" min="0" step="0.01" required />
+  </div>
+  <div>
+    <label for="amountPaid">Amount Paid *</label>
+    <input type="number" id="amountPaid" min="0" step="0.01" required />
+  </div>
+  <div>
+    <label for="currency">Currency *</label>
+    <input type="text" id="currency" required maxlength="5" />
+  </div>
+  <button type="submit" class="btn btn-add">Add Record</button>
+</form>
+
+<!-- Financial Records Table -->
+<table id="financialTable">
+  <thead>
+    <tr>
+      <th>Receipt ID</th>
+      <th>Name</th>
+      <th>Purpose</th>
+      <th>Amount Due</th>
+      <th>Amount Paid</th>
+      <th>Amount Remaining</th>
+      <th>Currency</th>
+      <th>Timestamp</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<script>
+  const baseUrl = "https://script.google.com/macros/s/AKfycbw9P_XOd4k498l0e4WDbFqAF1asb2u4sRj_uX2B-2S1MvyWOeWQZqxy8dr13mPOdNOeuw/exec";
+
+  const errorDiv = document.getElementById("error");
+  const successDiv = document.getElementById("success");
+  const tbody = document.querySelector("#financialTable tbody");
+  const addForm = document.getElementById("addForm");
+
+  // Utility to clear messages
+  function clearMessages() {
+    errorDiv.textContent = "";
+    successDiv.textContent = "";
+  }
+
+  // Fetch and render financial records
+  async function fetchRecords() {
+    clearMessages();
+    try {
+      const res = await fetch(`${baseUrl}?action=getFinancialRecords`);
+      if (!res.ok) throw new Error("Network error");
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message || "Failed to fetch records");
+
+      tbody.innerHTML = "";
+      data.records.forEach(record => {
+        const amountDue = isNaN(record.amountDue) ? 0 : record.amountDue;
+        const amountPaid = isNaN(record.amountPaid) ? 0 : record.amountPaid;
+        const amountRemaining = isNaN(record.amountRemaining) ? 0 : record.amountRemaining;
+
+        const tr = document.createElement("tr");
+        tr.dataset.receiptId = record.receiptId;
+
+        tr.innerHTML = `
+          <td>${record.receiptId || '-'}</td>
+          <td class="name">${record.name || '-'}</td>
+          <td class="purpose">${record.purpose || '-'}</td>
+          <td class="amountDue">${amountDue.toFixed(2)}</td>
+          <td class="amountPaid">${amountPaid.toFixed(2)}</td>
+          <td class="amountRemaining">${amountRemaining.toFixed(2)}</td>
+          <td class="currency">${record.currency || '-'}</td>
+          <td>${record.timestamp ? new Date(record.timestamp).toLocaleString() : '-'}</td>
+          <td>
+            <button class="btn btn-edit">Edit</button>
+            <button class="btn btn-delete">Delete</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      addTableEventListeners();
+    } catch (error) {
+      errorDiv.textContent = "Error loading records: " + error.message;
+    }
+  }
+
+  // Add new financial record
+  addForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    clearMessages();
+
+    const name = document.getElementById("name").value.trim();
+    const purpose = document.getElementById("purpose").value.trim();
+    const amountDue = parseFloat(document.getElementById("amountDue").value);
+    const amountPaid = parseFloat(document.getElementById("amountPaid").value);
+    const currency = document.getElementById("currency").value.trim();
+
+    if (!name || !purpose || isNaN(amountDue) || isNaN(amountPaid) || !currency) {
+      errorDiv.textContent = "Please fill in all required fields correctly.";
+      return;
+    }
+    if (amountPaid > amountDue) {
+      errorDiv.textContent = "Amount paid cannot exceed amount due.";
+      return;
+    }
+
+    const params = new URLSearchParams();
+    params.append("action", "addFinancialRecord");
+    params.append("name", name);
+    params.append("purpose", purpose);
+    params.append("amountDue", amountDue);
+    params.append("amountPaid", amountPaid);
+    params.append("currency", currency);
+
+    try {
+      const res = await fetch(baseUrl, {
+        method: "POST",
+        body: params
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message || "Failed to add record");
+
+      successDiv.textContent = "Record added successfully!";
+      addForm.reset();
+      fetchRecords();
+    } catch (error) {
+      errorDiv.textContent = "Failed to add record: " + error.message;
+    }
+  });
+
+  // Attach event listeners for edit and delete buttons
+  function addTableEventListeners() {
+    document.querySelectorAll(".btn-delete").forEach(btn => {
+      btn.onclick = async (e) => {
+        clearMessages();
+        if (!confirm("Are you sure you want to delete this record?")) return;
+
+        const row = e.target.closest("tr");
+        const receiptId = row.dataset.receiptId;
+        if (!receiptId) return;
+
+        const params = new URLSearchParams();
+        params.append("action", "deleteFinancialRecord");
+        params.append("receiptId", receiptId);
+
+        try {
+          const res = await fetch(baseUrl, {
+            method: "POST",
+            body: params
+          });
+          const data = await res.json();
+          if (!data.success) throw new Error(data.message || "Failed to delete record");
+
+          successDiv.textContent = "Record deleted successfully!";
+          fetchRecords();
+        } catch (error) {
+          errorDiv.textContent = "Delete failed: " + error.message;
+        }
+      };
+    });
+
+    document.querySelectorAll(".btn-edit").forEach(btn => {
+      btn.onclick = (e) => {
+        clearMessages();
+        const row = e.target.closest("tr");
+
+        if (row.classList.contains("editing")) return; // prevent double edit
+
+        row.classList.add("editing");
+
+        // Save original values to revert if cancel
+        const originalValues = {
+          name: row.querySelector(".name").textContent,
+          purpose: row.querySelector(".purpose").textContent,
+          amountDue: row.querySelector(".amountDue").textContent,
+          amountPaid: row.querySelector(".amountPaid").textContent,
+          currency: row.querySelector(".currency").textContent
+        };
+
+        // Replace cells with inputs
+        row.querySelector(".name").innerHTML = `<input type="text" value="${originalValues.name}" />`;
+        row.querySelector(".purpose").innerHTML = `<input type="text" value="${originalValues.purpose}" />`;
+        row.querySelector(".amountDue").innerHTML = `<input type="number" step="0.01" min="0" value="${originalValues.amountDue}" />`;
+        row.querySelector(".amountPaid").innerHTML = `<input type="number" step="0.01" min="0" value="${originalValues.amountPaid}" />`;
+        row.querySelector(".currency").innerHTML = `<input type="text" maxlength="5" value="${originalValues.currency}" />`;
+
+        // Replace action buttons with Save/Cancel
+        const actionCell = row.querySelector("td:last-child");
+        actionCell.innerHTML = `
+          <button class="btn btn-save">Save</button>
+          <button class="btn btn-cancel">Cancel</button>
+        `;
+
+        // Save handler
+        actionCell.querySelector(".btn-save").onclick = async () => {
+          clearMessages();
+
+          const inputs = row.querySelectorAll("input");
+          const updatedName = inputs[0].value.trim();
+          const updatedPurpose = inputs[1].value.trim();
+          const updatedAmountDue = parseFloat(inputs[2].value);
+          const updatedAmountPaid = parseFloat(inputs[3].value);
+          const updatedCurrency = inputs[4].value.trim();
+
+          if (!updatedName || !updatedPurpose || isNaN(updatedAmountDue) || isNaN(updatedAmountPaid) || !updatedCurrency) {
+            errorDiv.textContent = "Please fill all fields correctly.";
+            return;
+          }
+          if (updatedAmountPaid > updatedAmountDue) {
+            errorDiv.textContent = "Amount paid cannot exceed amount due.";
+            return;
+          }
+
+          const params = new URLSearchParams();
+          params.append("action", "editFinancialRecord");
+          params.append("receiptId", row.dataset.receiptId);
+          params.append("name", updatedName);
+          params.append("purpose", updatedPurpose);
+          params.append("amountDue", updatedAmountDue);
+          params.append("amountPaid", updatedAmountPaid);
+          params.append("currency", updatedCurrency);
+
+          try {
+            const res = await fetch(baseUrl, {
+              method: "POST",
+              body: params
+            });
+            const data = await res.json();
+            if (!data.success) throw new Error(data.message || "Failed to update record");
+
+            successDiv.textContent = "Record updated successfully!";
+            fetchRecords();
+          } catch (error) {
+            errorDiv.textContent = "Update failed: " + error.message;
+          }
+        };
+
+        // Cancel handler
+        actionCell.querySelector(".btn-cancel").onclick = () => {
+          clearMessages();
+          row.classList.remove("editing");
+
+          row.querySelector(".name").textContent = originalValues.name;
+          row.querySelector(".purpose").textContent = originalValues.purpose;
+          row.querySelector(".amountDue").textContent = parseFloat(originalValues.amountDue).toFixed(2);
+          row.querySelector(".amountPaid").textContent = parseFloat(originalValues.amountPaid).toFixed(2);
+          row.querySelector(".currency").textContent = originalValues.currency;
+
+          actionCell.innerHTML = `
+            <button class="btn btn-edit">Edit</button>
+            <button class="btn btn-delete">Delete</button>
+          `;
+
+          addTableEventListeners(); // Reattach event listeners after cancel
+        };
+      };
+    });
+  }
+
+  // Initial load
+  fetchRecords();
+</script>
+
+</body>
+  </html>
