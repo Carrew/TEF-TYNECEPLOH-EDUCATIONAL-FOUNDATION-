@@ -106,17 +106,17 @@
         data.grades.forEach(grade => {
           const tr = document.createElement('tr');
           tr.innerHTML = `
-            <td>${grade.StudentID}</td>
-            <td>${grade.Subject}</td>
-            <td>${grade.Score}</td>
-            <td>${grade.Period}</td>
-            <td>${grade.TeacherID}</td>
-            <td>${grade.Status}</td>
-            <td>${grade.RejectReason || ''}</td>
+            <td>${grade.studentId}</td>
+            <td>${grade.subject}</td>
+            <td>${grade.score}</td>
+            <td>${grade.period}</td>
+            <td>${grade.teacherId}</td>
+            <td>${grade.status}</td>
+            <td>${grade.rejectReason || ''}</td>
             <td>
-              ${grade.Status === 'Submitted' ? `
-                <button onclick="approveGrade('${grade.StudentID}', '${grade.Subject}', '${grade.Period}', '${grade.TeacherID}')">Approve</button>
-                <button onclick="rejectGrade('${grade.StudentID}', '${grade.Subject}', '${grade.Period}', '${grade.TeacherID}')">Reject</button>
+              ${grade.status === 'Submitted' ? `
+                <button onclick="approveGrade(${grade.row})">Approve</button>
+                <button onclick="rejectGrade(${grade.row})">Reject</button>
               ` : ''}
             </td>
           `;
@@ -129,7 +129,7 @@
       }
     }
 
-    async function approveGrade(studentId, subject, period, teacherId) {
+    async function approveGrade(row) {
       clearMessage();
       try {
         const res = await fetch(BASE_URL, {
@@ -137,10 +137,7 @@
           headers: {'Content-Type': 'application/x-www-form-urlencoded'},
           body: new URLSearchParams({
             action: 'approveGrades',
-            studentId,
-            subject,
-            period,
-            teacherId
+            rows: JSON.stringify([row])
           })
         });
         const data = await res.json();
@@ -155,7 +152,7 @@
       }
     }
 
-    async function rejectGrade(studentId, subject, period, teacherId) {
+    async function rejectGrade(row) {
       clearMessage();
       const reason = prompt('Enter reason for rejection:');
       if (!reason) {
@@ -168,10 +165,7 @@
           headers: {'Content-Type': 'application/x-www-form-urlencoded'},
           body: new URLSearchParams({
             action: 'rejectGrades',
-            studentId,
-            subject,
-            period,
-            teacherId,
+            row: row,
             rejectReason: reason
           })
         });
@@ -199,4 +193,4 @@
     }
   </script>
 </body>
-  </html>
+</html>
