@@ -1,139 +1,139 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Teacher Login</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    /* Same styling as student login */
-    * {
-      box-sizing: border-box;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-    body {
-      margin: 0;
-      padding: 0;
-      background: linear-gradient(135deg, #e3f2fd, #bbdefb);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-    }
-    .login-container {
-      background: #ffffff;
-      padding: 40px 30px;
-      border-radius: 12px;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-      width: 100%;
-      max-width: 400px;
-    }
-    h2 {
-      text-align: center;
-      color: #1976d2;
-      margin-bottom: 20px;
-    }
-    label {
-      font-weight: bold;
-      color: #333;
-      display: block;
-      margin-top: 10px;
-    }
-    input {
-      width: 100%;
-      padding: 10px;
-      margin: 10px 0 20px 0;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      font-size: 15px;
-    }
-    button {
-      width: 100%;
-      background-color: #1976d2;
-      color: white;
-      border: none;
-      padding: 12px;
-      border-radius: 8px;
-      font-size: 16px;
-      cursor: pointer;
-      transition: background-color 0.3s;
-    }
-    button:hover {
-      background-color: #0d47a1;
-    }
-    #result {
-      text-align: center;
-      margin-top: 15px;
-      font-size: 15px;
-    }
-    @media (max-width: 480px) {
-      .login-container {
-        padding: 30px 20px;
-      }
-    }
-  </style>
-</head>
-<body>
-  <div class="login-container">
-    <h2>Teacher Login</h2>
-
-    <label for="teacherId">Teacher ID</label>
-    <input type="text" id="teacherId" placeholder="Enter your Teacher ID" />
-
-    <label for="pin">PIN</label>
-    <input type="password" id="pin" placeholder="Enter your PIN" />
-
-    <button onclick="login()">Login</button>
-    <p id="result"></p>
-  </div>
-
-  <script>
-    async function login() {
-      const teacherId = document.getElementById('teacherId').value.trim();
-      const pin = document.getElementById('pin').value.trim();
-      const result = document.getElementById('result');
-
-      if (!teacherId || !pin) {
-        result.style.color = 'red';
-        result.textContent = 'Please enter both Teacher ID and PIN.';
-        return;
-      }
-
-      const url = 'https://script.google.com/macros/s/AKfycbw9P_XOd4k498l0e4WDbFqAF1asb2u4sRj_uX2B-2S1MvyWOeWQZqxy8dr13mPOdNOeuw/exec';
-
-      const formData = new URLSearchParams();
-      formData.append('action', 'login'); // must include action=login for router
-      formData.append('role', 'teacher');
-      formData.append('id', teacherId);
-      formData.append('pin', pin);
-
-      try {
-        const response = await fetch(url, {
-          method: 'POST',
-          body: formData
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-          result.style.color = 'green';
-          result.textContent = `Login successful! Welcome, ${data.name}`;
-
-          // Save teacherId in localStorage
-          localStorage.setItem('teacherId', teacherId);
-
-          setTimeout(() => {
-            window.location.href = 'teacher_dashboard.html';
-          }, 1000);
-        } else {
-          result.style.color = 'red';
-          result.textContent = data.message;
-        }
-      } catch (error) {
-        result.style.color = 'red';
-        result.textContent = 'Network error or server issue.';
-        console.error(error);
-      }
-    }
-  </script>
-</body>
+<!DOCTYPE html>  
+<html lang="en">  
+<head>  
+  <meta charset="UTF-8" />  
+  <title>Teacher Login</title>  
+  <meta name="viewport" content="width=device-width, initial-scale=1" />  
+  <style>  
+    * {  
+      box-sizing: border-box;  
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;  
+    }  
+    body {  
+      margin: 0;  
+      padding: 0;  
+      background: linear-gradient(135deg, #e3f2fd, #bbdefb);  
+      display: flex;  
+      justify-content: center;  
+      align-items: center;  
+      height: 100vh;  
+    }  
+    .login-container {  
+      background: #ffffff;  
+      padding: 40px 30px;  
+      border-radius: 12px;  
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);  
+      width: 100%;  
+      max-width: 400px;  
+    }  
+    h2 {  
+      text-align: center;  
+      color: #1976d2;  
+      margin-bottom: 20px;  
+    }  
+    label {  
+      font-weight: bold;  
+      color: #333;  
+      display: block;  
+      margin-top: 10px;  
+    }  
+    input {  
+      width: 100%;  
+      padding: 10px;  
+      margin: 10px 0 20px 0;  
+      border: 1px solid #ccc;  
+      border-radius: 8px;  
+      font-size: 15px;  
+    }  
+    button {  
+      width: 100%;  
+      background-color: #1976d2;  
+      color: white;  
+      border: none;  
+      padding: 12px;  
+      border-radius: 8px;  
+      font-size: 16px;  
+      cursor: pointer;  
+      transition: background-color 0.3s;  
+    }  
+    button:hover {  
+      background-color: #0d47a1;  
+    }  
+    #result {  
+      text-align: center;  
+      margin-top: 15px;  
+      font-size: 15px;  
+    }  
+    @media (max-width: 480px) {  
+      .login-container {  
+        padding: 30px 20px;  
+      }  
+    }  
+  </style>  
+</head>  
+<body>  
+  <div class="login-container">  
+    <h2>Teacher Login</h2>  
+  
+    <label for="teacherId">Teacher ID</label>  
+    <input type="text" id="teacherId" placeholder="Enter your Teacher ID" />  
+  
+    <label for="pin">PIN</label>  
+    <input type="password" id="pin" placeholder="Enter your PIN" />  
+  
+    <button onclick="login()">Login</button>  
+    <p id="result"></p>  
+  </div>  
+  
+  <script>  
+    async function login() {  
+      const teacherId = document.getElementById('teacherId').value.trim();  
+      const pin = document.getElementById('pin').value.trim();  
+      const result = document.getElementById('result');  
+  
+      if (!teacherId || !pin) {  
+        result.style.color = 'red';  
+        result.textContent = 'Please enter both Teacher ID and PIN.';  
+        return;  
+      }  
+  
+      const url = 'https://script.google.com/macros/s/AKfycbw9P_XOd4k498l0e4WDbFqAF1asb2u4sRj_uX2B-2S1MvyWOeWQZqxy8dr13mPOdNOeuw/exec';  
+  
+      const formData = new URLSearchParams();  
+      formData.append('action', 'login');  
+      formData.append('role', 'teacher');  
+      formData.append('id', teacherId);  
+      formData.append('pin', pin);  
+  
+      try {  
+        const response = await fetch(url, {  
+          method: 'POST',  
+          body: formData  
+        });  
+  
+        const data = await response.json();  
+  
+        if (data.success) {  
+          result.style.color = 'green';  
+          result.textContent = `Login successful! Welcome, ${data.name}`;  
+  
+          // Save teacherId and teacherName in localStorage  
+          localStorage.setItem('teacherId', teacherId);  
+          localStorage.setItem('teacherName', data.name);  
+  
+          setTimeout(() => {  
+            window.location.href = 'teacher_dashboard.html';  
+          }, 1000);  
+        } else {  
+          result.style.color = 'red';  
+          result.textContent = data.message;  
+        }  
+      } catch (error) {  
+        result.style.color = 'red';  
+        result.textContent = 'Network error or server issue.';  
+        console.error(error);  
+      }  
+    }  
+  </script>  
+</body>  
 </html>
