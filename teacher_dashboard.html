@@ -1,187 +1,108 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Teacher Dashboard</title>
-<style>
-  body { font-family: Arial, sans-serif; max-width: 700px; margin: auto; padding: 1rem; }
-  input, select, button { margin: 0.5rem 0; padding: 0.4rem; width: 100%; max-width: 300px; }
-  ul { list-style-type: none; padding-left: 0; max-height: 200px; overflow-y: auto; border: 1px solid #ccc; }
-  li { padding: 0.4rem; cursor: pointer; border-bottom: 1px solid #eee; }
-  li:hover { background-color: #f0f0f0; }
-  .hidden { display: none; }
-  .message { margin: 0.5rem 0; font-weight: bold; }
-  label { display: block; margin-top: 1rem; }
-</style>
+  <title>Teacher Dashboard - Submit Grades</title>
 </head>
 <body>
+  <h1>Submit Grades</h1>
 
-<h1>Teacher Dashboard</h1>
-
-<label for="teacherId">Your Teacher ID:</label>
-<input type="text" id="teacherId" placeholder="Enter your Teacher ID" />
-
-<button onclick="loadAssignedStudents()">Load Assigned Students</button>
-
-<label for="searchStudent">Search Student:</label>
-<input type="text" id="searchStudent" placeholder="Type to search students" oninput="filterStudents()" disabled />
-
-<ul id="studentsList"></ul>
-
-<form id="gradeForm" class="hidden" onsubmit="submitGrade(event)">
-  <h3>Submit Grade</h3>
-  <input type="hidden" id="selectedStudentId" />
-
-  <label for="studentName">Student:</label>
-  <input type="text" id="studentName" disabled />
+  <label for="studentSelect">Select Student:</label>
+  <select id="studentSelect">
+    <option value="">Loading students...</option>
+  </select>
 
   <label for="subject">Subject:</label>
-  <input type="text" id="subject" required />
+  <input type="text" id="subject">
 
   <label for="score">Score:</label>
-  <input type="number" id="score" min="0" max="100" required />
+  <input type="number" id="score" min="0" max="100">
 
   <label for="period">Period:</label>
-  <select id="period" required>
-    <option value="">Select Period</option>
+  <select id="period">
     <option value="1st Period">1st Period</option>
     <option value="2nd Period">2nd Period</option>
     <option value="3rd Period">3rd Period</option>
-    <option value="Semester Exam">Semester Exam</option>
-    <option value="Final Exam">Final Exam</option>
+    <option value="4th Period">4th Period</option>
+    <option value="5th Period">5th Period</option>
+    <option value="6th Period">6th Period</option>
   </select>
 
-  <button type="submit">Submit Grade</button>
-</form>
+  <button onclick="submitGrade()">Submit Grade</button>
 
-<div id="message" class="message"></div>
+  <script>
+    const scriptUrl = "YOUR_GS_WEB_APP_URL"; // Replace with your Apps Script URL
+    let teacherId = null;
 
-<script>
-  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw9P_XOd4k498l0e4WDbFqAF1asb2u4sRj_uX2B-2S1MvyWOeWQZqxy8dr13mPOdNOeuw/exec";
-
-  let assignedStudents = [];
-
-  // On page load: fill teacherId input from localStorage, make it read-only and auto-load students
-  window.addEventListener('DOMContentLoaded', () => {
-    const savedTeacherId = localStorage.getItem('teacherId');
-    if (savedTeacherId) {
-      const teacherInput = document.getElementById('teacherId');
-      teacherInput.value = savedTeacherId;
-      teacherInput.readOnly = true;  // Make ID input non-editable
-      loadAssignedStudents();
+    // Get teacherId from URL
+    function getTeacherIdFromURL() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get("teacherId");
     }
-  });
 
-  function loadAssignedStudents() {
-    const teacherId = document.getElementById("teacherId").value.trim();
-    if (!teacherId) {
-      showMessage("Please enter your Teacher ID.");
-      return;
+    // Load students assigned to this teacher
+    function loadStudents() {
+      fetch(`${scriptUrl}?action=getAssignedStudents&teacherId=${teacherId}`)
+        .then(res => res.json())
+        .then(data => {
+          const select = document.getElementById("studentSelect");
+          select.innerHTML = "";
+          if (data.success && data.students.length > 0) {
+            data.students.forEach(student => {
+              let option = document.createElement("option");
+              option.value = student.StudentID;
+              option.textContent = student.Name;
+              select.appendChild(option);
+            });
+          } else {
+            let option = document.createElement("option");
+            option.textContent = "No students assigned";
+            select.appendChild(option);
+          }
+        })
+        .catch(err => console.error(err));
     }
-    fetch(`${WEB_APP_URL}?action=getAssignedStudents&teacherId=${encodeURIComponent(teacherId)}`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          assignedStudents = data.students;
-          populateStudentsList(assignedStudents);
-          document.getElementById("searchStudent").disabled = false;
-          showMessage(`Loaded ${assignedStudents.length} students.`);
-          document.getElementById("gradeForm").classList.add("hidden");
-        } else {
-          showMessage(data.message);
-          assignedStudents = [];
-          populateStudentsList([]);
-          document.getElementById("searchStudent").disabled = true;
-          document.getElementById("gradeForm").classList.add("hidden");
-        }
-      })
-      .catch(err => {
-        showMessage("Error loading students.");
-        console.error(err);
-      });
-  }
 
-  function populateStudentsList(students) {
-    const list = document.getElementById("studentsList");
-    list.innerHTML = "";
-    if (students.length === 0) {
-      list.innerHTML = "<li>No students found.</li>";
-      return;
+    // Submit grade
+    function submitGrade() {
+      const studentId = document.getElementById("studentSelect").value;
+      const subject = document.getElementById("subject").value;
+      const score = document.getElementById("score").value;
+      const period = document.getElementById("period").value;
+
+      if (!studentId || !subject || !score) {
+        alert("Please fill all fields");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("action", "submitGrade");
+      formData.append("teacherId", teacherId);
+      formData.append("studentId", studentId);
+      formData.append("subject", subject);
+      formData.append("score", score);
+      formData.append("period", period);
+
+      fetch(scriptUrl, { method: "POST", body: formData })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            alert("Grade submitted successfully!");
+          } else {
+            alert("Error: " + data.message);
+          }
+        })
+        .catch(err => console.error(err));
     }
-    students.forEach(s => {
-      const li = document.createElement("li");
-      li.textContent = `${s.name} (${s.class})`;
-      li.dataset.studentId = s.studentId;
-      li.dataset.studentName = s.name;
-      li.onclick = () => selectStudent(li);
-      list.appendChild(li);
+
+    // On page load
+    document.addEventListener("DOMContentLoaded", () => {
+      teacherId = getTeacherIdFromURL();
+      if (!teacherId) {
+        alert("Teacher ID missing. Please login again.");
+        return;
+      }
+      loadStudents();
     });
-  }
-
-  function filterStudents() {
-    const query = document.getElementById("searchStudent").value.toLowerCase();
-    const filtered = assignedStudents.filter(s => s.name.toLowerCase().includes(query));
-    populateStudentsList(filtered);
-  }
-
-  function selectStudent(li) {
-    const studentId = li.dataset.studentId;
-    const studentName = li.dataset.studentName;
-    document.getElementById("selectedStudentId").value = studentId;
-    document.getElementById("studentName").value = studentName;
-    document.getElementById("gradeForm").classList.remove("hidden");
-    showMessage("");
-  }
-
-  function submitGrade(event) {
-    event.preventDefault();
-    const teacherId = document.getElementById("teacherId").value.trim();
-    const studentId = document.getElementById("selectedStudentId").value;
-    const subject = document.getElementById("subject").value.trim();
-    const score = document.getElementById("score").value.trim();
-    const period = document.getElementById("period").value;
-
-    if (!teacherId || !studentId || !subject || !score || !period) {
-      showMessage("Please fill all required fields.");
-      return;
-    }
-
-    const formData = new URLSearchParams();
-    formData.append("action", "submitGrade");
-    formData.append("teacherId", teacherId);
-    formData.append("studentId", studentId);
-    formData.append("subject", subject);
-    formData.append("score", score);
-    formData.append("period", period);
-
-    fetch(WEB_APP_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: formData.toString()
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          showMessage(data.message);
-          // Clear form except student info
-          document.getElementById("subject").value = "";
-          document.getElementById("score").value = "";
-          document.getElementById("period").value = "";
-        } else {
-          showMessage(data.message);
-        }
-      })
-      .catch(err => {
-        showMessage("Error submitting grade.");
-        console.error(err);
-      });
-  }
-
-  function showMessage(msg) {
-    document.getElementById("message").textContent = msg;
-  }
-</script>
-
+  </script>
 </body>
 </html>
