@@ -62,6 +62,15 @@
 
   let assignedStudents = [];
 
+  // On page load: fill teacherId input from localStorage and auto-load students
+  window.addEventListener('DOMContentLoaded', () => {
+    const savedTeacherId = localStorage.getItem('teacherId');
+    if (savedTeacherId) {
+      document.getElementById('teacherId').value = savedTeacherId;
+      loadAssignedStudents();
+    }
+  });
+
   function loadAssignedStudents() {
     const teacherId = document.getElementById("teacherId").value.trim();
     if (!teacherId) {
