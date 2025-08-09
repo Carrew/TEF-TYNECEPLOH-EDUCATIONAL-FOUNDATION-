@@ -7,7 +7,7 @@
   <style>
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, #ffc0cb, #800000); /* pink to maroon */
+      background: linear-gradient(135deg, #ffc0cb, #800000);
       height: 100vh;
       margin: 0;
       display: flex;
@@ -116,12 +116,12 @@
         const data = await response.json();
 
         if (data.success) {
-          // Save teacher ID to localStorage for dashboard use
-          localStorage.setItem('teacherId', teacherId);
-          localStorage.setItem('teacherName', data.name);
-
           result.style.color = 'green';
           result.textContent = `Login successful! Welcome, ${data.name}`;
+
+          // Save teacher info to localStorage
+          localStorage.setItem('teacherId', teacherId);
+          localStorage.setItem('teacherName', data.name);
 
           setTimeout(() => {
             window.location.href = 'teacher_dashboard.html';
