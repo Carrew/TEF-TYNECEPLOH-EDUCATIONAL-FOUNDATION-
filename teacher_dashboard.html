@@ -119,7 +119,7 @@
     teacherIdDisplay.textContent = teacherId;
 
     // Get teacher name from teacher list
-    const teacherList = await fetchJSON(`${scriptUrl}?action=getTeacherList`);
+    const teacherList = await fetchJSON(`${scriptUrl}?action=getTeacherList&role=teacher`);
     if (!teacherList.success) {
       alert("Error fetching teacher list: " + teacherList.message);
       return;
@@ -143,7 +143,7 @@
   }
 
   async function loadApprovedGrades() {
-    const res = await fetchJSON(`${scriptUrl}?action=getTeacherGrades&teacherId=${encodeURIComponent(teacherId)}`);
+    const res = await fetchJSON(`${scriptUrl}?action=getTeacherGrades&teacherId=${encodeURIComponent(teacherId)}&role=teacher`);
     const tbody = document.querySelector("#approvedGradesTable tbody");
     tbody.innerHTML = "";
     if (!res.success) {
@@ -162,7 +162,7 @@
   }
 
   async function loadSubmittedGrades() {
-    const res = await fetchJSON(`${scriptUrl}?action=viewSubmittedGrades&teacherId=${encodeURIComponent(teacherId)}`);
+    const res = await fetchJSON(`${scriptUrl}?action=viewSubmittedGrades&teacherId=${encodeURIComponent(teacherId)}&role=teacher`);
     const tbody = document.querySelector("#submittedGradesTable tbody");
     tbody.innerHTML = "";
     if (!res.success) {
@@ -181,7 +181,7 @@
   }
 
   async function loadRejectedGrades() {
-    const res = await fetchJSON(`${scriptUrl}?action=getRejectedGrades&teacherId=${encodeURIComponent(teacherId)}`);
+    const res = await fetchJSON(`${scriptUrl}?action=getRejectedGrades&teacherId=${encodeURIComponent(teacherId)}&role=teacher`);
     const tbody = document.querySelector("#rejectedGradesTable tbody");
     tbody.innerHTML = "";
     if (!res.success) {
@@ -229,6 +229,7 @@
     formData.append("score", values.score);
     formData.append("period", values.period);
     formData.append("teacherId", teacherId);
+    formData.append("role", "teacher");  // Added here
 
     const res = await fetch(scriptUrl, {
       method: "POST",
@@ -245,7 +246,7 @@
   }
 
   async function loadStudentsList() {
-    const res = await fetchJSON(`${scriptUrl}?action=getStudentsByClass&teacherId=${encodeURIComponent(teacherId)}`);
+    const res = await fetchJSON(`${scriptUrl}?action=getStudentsByClass&teacherId=${encodeURIComponent(teacherId)}&role=teacher`);
     const tbody = document.querySelector("#studentsTable tbody");
     tbody.innerHTML = "";
     if (!res.success) {
@@ -292,6 +293,7 @@
     formData.append("score", score);
     formData.append("period", period);
     formData.append("teacherId", teacherId);
+    formData.append("role", "teacher");  // Added here
 
     const res = await fetch(scriptUrl, {
       method: "POST",
@@ -312,4 +314,4 @@
 </script>
 
 </body>
-  </html>
+</html>
