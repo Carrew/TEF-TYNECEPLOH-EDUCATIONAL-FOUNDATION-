@@ -33,6 +33,18 @@
   button:hover {
     background-color: #16335a;
   }
+  #searchContainer {
+    max-width: 900px;
+    margin: 10px auto 20px auto;
+    text-align: center;
+  }
+  #searchInput {
+    width: 300px;
+    padding: 8px 12px;
+    font-size: 16px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+  }
   table {
     width: 100%;
     border-collapse: collapse;
@@ -56,9 +68,6 @@
     font-size: 13px;
     padding: 6px 12px;
   }
-  td button.reject-btn {
-    background-color: #c62828;
-  }
   td button:hover {
     opacity: 0.85;
   }
@@ -76,7 +85,10 @@
   <div id="buttons">
     <button onclick="loadGrades('getSubmittedGrades')">Submitted Grades</button>
     <button onclick="loadGrades('getApprovedGradesAdmin')">Approved Grades</button>
-    <button onclick="loadGrades('getRejectedGrades')">Rejected Grades</button>
+  </div>
+
+  <div id="searchContainer" style="display:none;">
+    <input type="text" id="searchInput" placeholder="Search by Student ID, Name, Subject, Class, or Teacher ID..." />
   </div>
 
   <div id="message"></div>
@@ -104,54 +116,128 @@
     const messageDiv = document.getElementById('message');
     const gradesTable = document.getElementById('gradesTable');
     const tbody = gradesTable.querySelector('tbody');
+    const searchContainer = document.getElementById('searchContainer');
+    const searchInput = document.getElementById('searchInput');
+
+    let allGrades = [];
+    let allStudents = [];
+
+    // Helper: safely get studentId field from grade object
+    function getStudentId(grade) {
+      return grade.studentId || grade.StudentID || grade.id || '';
+    }
+    // Helper: safely get name field from student object with common guesses
+    function getStudentName(student) {
+      return student.Name || student.name || student.FullName || student.fullName || student.StudentName || student.studentName || "Unknown";
+    }
+    // Helper: match student by studentId (case insensitive)
+    function findStudentNameById(studentId) {
+      if (!studentId) return "Unknown";
+      const id = studentId.toString().trim().toLowerCase();
+      const student = allStudents.find(s => {
+        const sid = (s.StudentID || s.studentId || s.id || "").toString().trim().toLowerCase();
+        return sid === id;
+      });
+      if (student) return getStudentName(student);
+      return "Unknown";
+    }
 
     async function loadGrades(action) {
       clearMessage();
       tbody.innerHTML = '';
       gradesTable.style.display = 'none';
+      searchContainer.style.display = 'none';
+      searchInput.value = '';
 
       try {
-        const res = await fetch(`${BASE_URL}?action=${action}`);
-        const data = await res.json();
+        // Load grades
+        const urlGrades = new URL(BASE_URL);
+        urlGrades.searchParams.append('action', action);
+        urlGrades.searchParams.append('role', 'principal');
+        const resGrades = await fetch(urlGrades);
+        const dataGrades = await resGrades.json();
 
-        if (!data.success) {
-          showMessage(`Error: ${data.message}`, true);
+        if (!dataGrades.success) {
+          showMessage(`Error: ${dataGrades.message}`, true);
           return;
         }
-
-        if (!data.grades || data.grades.length === 0) {
+        if (!dataGrades.grades || dataGrades.grades.length === 0) {
           showMessage('No grades found.');
           return;
         }
+        allGrades = dataGrades.grades;
 
-        data.grades.forEach(grade => {
-          const tr = document.createElement('tr');
+        // Load students list to find names
+        const urlStudents = new URL(BASE_URL);
+        urlStudents.searchParams.append('action', 'getStudentList');
+        urlStudents.searchParams.append('role', 'principal');
+        const resStudents = await fetch(urlStudents);
+        const dataStudents = await resStudents.json();
 
-          tr.innerHTML = `
-            <td>${escapeHTML(grade.studentId)}</td>
-            <td>${escapeHTML(grade.name || '')}</td>
-            <td>${escapeHTML(grade.subject)}</td>
-            <td>${escapeHTML(grade.score)}</td>
-            <td>${escapeHTML(grade.period)}</td>
-            <td>${escapeHTML(grade.teacherId)}</td>
-            <td>${escapeHTML(grade.status)}</td>
-            <td>${escapeHTML(grade.rejectReason || '')}</td>
-            <td>
-              ${grade.status === 'Submitted' ? `
-                <button onclick="approveGrade(${grade.row})">Approve</button>
-                <button class="reject-btn" onclick="rejectGrade(${grade.row})">Reject</button>
-              ` : ''}
-            </td>
-          `;
+        if (!dataStudents.success) {
+          showMessage(`Error loading students: ${dataStudents.message}`, true);
+          return;
+        }
+        allStudents = dataStudents.data || [];
 
-          tbody.appendChild(tr);
-        });
+        renderGrades(allGrades);
 
         gradesTable.style.display = '';
+        searchContainer.style.display = '';
       } catch (error) {
         showMessage('Failed to load grades: ' + error.message, true);
       }
     }
+
+    function renderGrades(grades) {
+      tbody.innerHTML = '';
+      grades.forEach(grade => {
+        const sid = getStudentId(grade);
+        const studentName = findStudentNameById(sid);
+
+        const tr = document.createElement('tr');
+
+        tr.innerHTML = `
+          <td>${escapeHTML(sid)}</td>
+          <td>${escapeHTML(studentName)}</td>
+          <td>${escapeHTML(grade.subject)}</td>
+          <td>${escapeHTML(grade.score)}</td>
+          <td>${escapeHTML(grade.period)}</td>
+          <td>${escapeHTML(grade.teacherId)}</td>
+          <td>${escapeHTML(grade.status)}</td>
+          <td>${escapeHTML(grade.rejectReason || '')}</td>
+          <td>
+            ${grade.status === 'Submitted' ? `
+              <button onclick="approveGrade(${grade.row})">Approve</button>
+              <button onclick="rejectGrade(${grade.row})">Reject</button>
+            ` : ''}
+          </td>
+        `;
+
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Search filter function
+    searchInput.addEventListener('input', () => {
+      const query = searchInput.value.trim().toLowerCase();
+      if (!query) {
+        renderGrades(allGrades);
+        return;
+      }
+      const filtered = allGrades.filter(grade => {
+        const sid = getStudentId(grade).toLowerCase();
+        const studentName = findStudentNameById(sid).toLowerCase();
+        return (
+          sid.includes(query) ||
+          studentName.includes(query) ||
+          (grade.subject && grade.subject.toLowerCase().includes(query)) ||
+          (grade.class && grade.class.toLowerCase().includes(query)) ||  // if exists
+          (grade.teacherId && grade.teacherId.toLowerCase().includes(query))
+        );
+      });
+      renderGrades(filtered);
+    });
 
     async function approveGrade(row) {
       clearMessage();
@@ -161,6 +247,7 @@
           headers: {'Content-Type': 'application/x-www-form-urlencoded'},
           body: new URLSearchParams({
             action: 'approveGrades',
+            role: 'principal',
             rows: JSON.stringify([row])
           })
         });
@@ -191,6 +278,7 @@
           headers: {'Content-Type': 'application/x-www-form-urlencoded'},
           body: new URLSearchParams({
             action: 'rejectGrades',
+            role: 'principal',
             row: row,
             rejectReason: reason
           })
