@@ -116,10 +116,12 @@
         const data = await response.json();
 
         if (data.success) {
+          // Save id and name to localStorage for dashboard use
+          localStorage.setItem('studentId', studentId);
+          localStorage.setItem('studentName', data.name);
+
           result.style.color = 'green';
           result.textContent = `Login successful! Welcome, ${data.name}`;
-          // Save student id if you want in localStorage/sessionStorage here (optional)
-          // localStorage.setItem('studentId', studentId);
 
           setTimeout(() => {
             window.location.href = 'student_dashboard.html';
