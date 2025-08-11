@@ -127,9 +127,16 @@
 <div id="announcements">Loading announcements...</div>
 
 <script>
+  const currentUserRole = 'principal'; // Set role here
   const announcementsContainer = document.getElementById('announcements');
   const messageDiv = document.getElementById('message');
+  const addForm = document.getElementById('announcementForm');
   const baseUrl = "https://script.google.com/macros/s/AKfycbw9P_XOd4k498l0e4WDbFqAF1asb2u4sRj_uX2B-2S1MvyWOeWQZqxy8dr13mPOdNOeuw/exec";
+
+  // Hide add form if not principal
+  if (currentUserRole !== 'principal') {
+    addForm.style.display = 'none';
+  }
 
   // Show message
   function showMessage(msg, isError = false) {
@@ -141,6 +148,13 @@
   function clearMessage() {
     messageDiv.textContent = '';
     messageDiv.className = '';
+  }
+
+  // Escape HTML for safety
+  function escapeHtml(text) {
+    return text.replace(/[&<>"']/g, function(m) {
+      return {'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'}[m];
+    });
   }
 
   // Fetch and display announcements
@@ -160,31 +174,32 @@
           const div = document.createElement('div');
           div.className = 'announcement';
           div.dataset.id = announcement.announcementId;
-          div.innerHTML = `
-            <h3 class="title">${escapeHtml(announcement.title || 'No Title')}</h3>
-            <small>${dateStr}</small>
-            <p class="message">${escapeHtml(announcement.message || 'No Message')}</p>
+
+          // Show actions only for principal role
+          const actionButtons = currentUserRole === 'principal' ? `
             <div class="actions">
               <button class="edit">Edit</button>
               <button class="delete">Delete</button>
             </div>
+          ` : '';
+
+          div.innerHTML = `
+            <h3 class="title">${escapeHtml(announcement.title || 'No Title')}</h3>
+            <small>${dateStr}</small>
+            <p class="message">${escapeHtml(announcement.message || 'No Message')}</p>
+            ${actionButtons}
           `;
           announcementsContainer.appendChild(div);
         });
-        attachAnnouncementEvents();
+        if (currentUserRole === 'principal') {
+          attachAnnouncementEvents();
+        }
       } else {
         announcementsContainer.textContent = 'No announcements found.';
       }
     } catch (error) {
       announcementsContainer.textContent = 'Failed to load announcements: ' + error.message;
     }
-  }
-
-  // Escape HTML for safety
-  function escapeHtml(text) {
-    return text.replace(/[&<>"']/g, function(m) {
-      return {'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'}[m];
-    });
   }
 
   // Attach edit and delete event listeners
@@ -240,6 +255,7 @@
           params.append('announcementId', announcementId);
           params.append('title', newTitle);
           params.append('message', newMessage);
+          params.append('role', currentUserRole);
 
           try {
             const res = await fetch(baseUrl, {
@@ -270,6 +286,7 @@
         const params = new URLSearchParams();
         params.append('action', 'deleteAnnouncement');
         params.append('announcementId', announcementId);
+        params.append('role', currentUserRole);
 
         try {
           const res = await fetch(baseUrl, {
@@ -299,7 +316,7 @@
   }
 
   // Add new announcement form handler
-  document.getElementById('announcementForm').addEventListener('submit', async (e) => {
+  addForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     clearMessage();
 
@@ -315,6 +332,7 @@
     params.append('action', 'addAnnouncement');
     params.append('title', title);
     params.append('message', message);
+    params.append('role', currentUserRole);
 
     try {
       const response = await fetch(baseUrl, {
