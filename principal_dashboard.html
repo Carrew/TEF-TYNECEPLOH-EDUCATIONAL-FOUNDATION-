@@ -74,6 +74,7 @@
     <button class="btn" onclick="location.href='financials.html'">💰 Finance</button>
     <button class="btn" onclick="location.href='grades.html'">📝 Grades</button>
     <button class="btn" onclick="location.href='principalreset.html'">🔑 Reset Credentials</button>
+    <button class="btn" onclick="logout()">🚪 Logout</button>
 </div>
 
 <footer>
@@ -84,6 +85,12 @@
 function loadPrincipalName() {
     const name = localStorage.getItem("principalName") || "Principal";
     document.getElementById("principalName").textContent = name;
+}
+
+function logout() {
+  localStorage.removeItem("principalName");
+  localStorage.removeItem("principalPin");
+  window.location.href = 'principal_login.html'; // Update this if your login file name differs
 }
 </script>
 
