@@ -109,7 +109,7 @@
 </div>
 
 <div id="searchContainer">
-  <input type="text" id="searchInput" placeholder="Search by Student ID or Name..." />
+  <input type="text" id="searchInput" placeholder="Search by Student ID, Name, or Class..." />
 </div>
 
 <div class="form-container" style="max-width: 900px; margin: 10px auto;">
@@ -190,7 +190,8 @@
     if (searchQuery) {
       studentsToFilter = studentsToFilter.filter(s => 
         (s.StudentID && s.StudentID.toLowerCase().includes(searchQuery)) ||
-        (s.Name && s.Name.toLowerCase().includes(searchQuery))
+        (s.Name && s.Name.toLowerCase().includes(searchQuery)) ||
+        (s.Class && s.Class.toLowerCase().includes(searchQuery))
       );
     }
 
