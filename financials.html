@@ -155,7 +155,7 @@
   async function fetchRecords() {
     clearMessages();
     try {
-      const res = await fetch(`${baseUrl}?action=getFinancialRecords`);
+      const res = await fetch(`${baseUrl}?action=getFinancialRecords&role=principal`);
       if (!res.ok) throw new Error("Network error");
       const data = await res.json();
       if (!data.success) throw new Error(data.message || "Failed to fetch records");
@@ -214,6 +214,7 @@
 
     const params = new URLSearchParams();
     params.append("action", "addFinancialRecord");
+    params.append("role", "principal");
     params.append("name", name);
     params.append("purpose", purpose);
     params.append("amountDue", amountDue);
@@ -249,6 +250,7 @@
 
         const params = new URLSearchParams();
         params.append("action", "deleteFinancialRecord");
+        params.append("role", "principal");
         params.append("receiptId", receiptId);
 
         try {
@@ -321,6 +323,7 @@
 
           const params = new URLSearchParams();
           params.append("action", "editFinancialRecord");
+          params.append("role", "principal");
           params.append("receiptId", row.dataset.receiptId);
           params.append("name", updatedName);
           params.append("purpose", updatedPurpose);
@@ -370,4 +373,4 @@
 </script>
 
 </body>
-  </html>
+</html>
