@@ -13,6 +13,17 @@
   h1 {
     text-align: center;
   }
+  #searchContainer {
+    margin: 15px 0;
+    text-align: center;
+  }
+  #searchInput {
+    width: 300px;
+    padding: 8px 12px;
+    font-size: 16px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+  }
   table {
     width: 100%;
     border-collapse: collapse;
@@ -35,27 +46,28 @@
     padding: 6px 12px;
     margin: 2px;
     cursor: pointer;
+    border: none;
+    border-radius: 4px;
+    color: white;
   }
   .btn-add {
     background-color: #28a745;
-    color: white;
-    border: none;
     font-weight: bold;
   }
   .btn-save {
     background-color: #007bff;
-    color: white;
-    border: none;
   }
   .btn-cancel {
     background-color: #6c757d;
-    color: white;
-    border: none;
   }
   .btn-delete {
     background-color: #dc3545;
-    color: white;
-    border: none;
+  }
+  .btn-edit {
+    background-color: #17a2b8;
+  }
+  .btn-print {
+    background-color: #ff9800;
   }
   #error {
     color: red;
@@ -119,8 +131,12 @@
   <button type="submit" class="btn btn-add">Add Record</button>
 </form>
 
+<div id="searchContainer" style="display:none;">
+  <input type="text" id="searchInput" placeholder="Search by Receipt ID, Name, Purpose, Currency..." />
+</div>
+
 <!-- Financial Records Table -->
-<table id="financialTable">
+<table id="financialTable" style="display:none;">
   <thead>
     <tr>
       <th>Receipt ID</th>
@@ -144,8 +160,12 @@
   const successDiv = document.getElementById("success");
   const tbody = document.querySelector("#financialTable tbody");
   const addForm = document.getElementById("addForm");
+  const searchContainer = document.getElementById("searchContainer");
+  const searchInput = document.getElementById("searchInput");
+  const financialTable = document.getElementById("financialTable");
 
-  // Utility to clear messages
+  let allRecords = [];
+
   function clearMessages() {
     errorDiv.textContent = "";
     successDiv.textContent = "";
@@ -160,36 +180,77 @@
       const data = await res.json();
       if (!data.success) throw new Error(data.message || "Failed to fetch records");
 
-      tbody.innerHTML = "";
-      data.records.forEach(record => {
-        const amountDue = isNaN(record.amountDue) ? 0 : record.amountDue;
-        const amountPaid = isNaN(record.amountPaid) ? 0 : record.amountPaid;
-        const amountRemaining = isNaN(record.amountRemaining) ? 0 : record.amountRemaining;
+      allRecords = data.records || [];
 
-        const tr = document.createElement("tr");
-        tr.dataset.receiptId = record.receiptId;
+      // Sort by timestamp descending (newest first)
+      allRecords.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
 
-        tr.innerHTML = `
-          <td>${record.receiptId || '-'}</td>
-          <td class="name">${record.name || '-'}</td>
-          <td class="purpose">${record.purpose || '-'}</td>
-          <td class="amountDue">${amountDue.toFixed(2)}</td>
-          <td class="amountPaid">${amountPaid.toFixed(2)}</td>
-          <td class="amountRemaining">${amountRemaining.toFixed(2)}</td>
-          <td class="currency">${record.currency || '-'}</td>
-          <td>${record.timestamp ? new Date(record.timestamp).toLocaleString() : '-'}</td>
-          <td>
-            <button class="btn btn-edit">Edit</button>
-            <button class="btn btn-delete">Delete</button>
-          </td>
-        `;
-        tbody.appendChild(tr);
-      });
+      // Limit to 10 most recent
+      allRecords = allRecords.slice(0,10);
 
-      addTableEventListeners();
+      if(allRecords.length === 0) {
+        financialTable.style.display = "none";
+        searchContainer.style.display = "none";
+        successDiv.textContent = "No financial records found.";
+        return;
+      } else {
+        financialTable.style.display = "";
+        searchContainer.style.display = "";
+        successDiv.textContent = "";
+      }
+
+      renderRecords(allRecords);
+
     } catch (error) {
       errorDiv.textContent = "Error loading records: " + error.message;
+      financialTable.style.display = "none";
+      searchContainer.style.display = "none";
     }
+  }
+
+  function renderRecords(records) {
+    tbody.innerHTML = "";
+    records.forEach(record => {
+      const amountDue = isNaN(record.amountDue) ? 0 : record.amountDue;
+      const amountPaid = isNaN(record.amountPaid) ? 0 : record.amountPaid;
+      const amountRemaining = amountDue - amountPaid;
+
+      const tr = document.createElement("tr");
+      tr.dataset.receiptId = record.receiptId;
+
+      tr.innerHTML = `
+        <td>${record.receiptId || '-'}</td>
+        <td class="name">${record.name || '-'}</td>
+        <td class="purpose">${record.purpose || '-'}</td>
+        <td class="amountDue">${amountDue.toFixed(2)}</td>
+        <td class="amountPaid">${amountPaid.toFixed(2)}</td>
+        <td class="amountRemaining">${amountRemaining.toFixed(2)}</td>
+        <td class="currency">${record.currency || '-'}</td>
+        <td>${record.timestamp ? new Date(record.timestamp).toLocaleString() : '-'}</td>
+        <td>
+          <button class="btn btn-edit">Edit</button>
+          <button class="btn btn-delete">Delete</button>
+          <button class="btn btn-print">Print</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    addTableEventListeners();
+  }
+
+  // Filter records by search term
+  function filterRecords(term) {
+    term = term.toLowerCase();
+    const filtered = allRecords.filter(record => {
+      return (
+        (record.receiptId && record.receiptId.toLowerCase().includes(term)) ||
+        (record.name && record.name.toLowerCase().includes(term)) ||
+        (record.purpose && record.purpose.toLowerCase().includes(term)) ||
+        (record.currency && record.currency.toLowerCase().includes(term))
+      );
+    });
+    renderRecords(filtered);
   }
 
   // Add new financial record
@@ -237,7 +298,7 @@
     }
   });
 
-  // Attach event listeners for edit and delete buttons
+  // Attach event listeners for edit, delete, print buttons
   function addTableEventListeners() {
     document.querySelectorAll(".btn-delete").forEach(btn => {
       btn.onclick = async (e) => {
@@ -360,13 +421,73 @@
           actionCell.innerHTML = `
             <button class="btn btn-edit">Edit</button>
             <button class="btn btn-delete">Delete</button>
+            <button class="btn btn-print">Print</button>
           `;
 
           addTableEventListeners(); // Reattach event listeners after cancel
         };
       };
     });
+
+    // Print button handler
+    document.querySelectorAll(".btn-print").forEach(btn => {
+      btn.onclick = (e) => {
+        clearMessages();
+        const row = e.target.closest("tr");
+        const data = {
+          receiptId: row.children[0].textContent,
+          name: row.children[1].textContent,
+          purpose: row.children[2].textContent,
+          amountDue: row.children[3].textContent,
+          amountPaid: row.children[4].textContent,
+          amountRemaining: row.children[5].textContent,
+          currency: row.children[6].textContent,
+          timestamp: row.children[7].textContent
+        };
+
+        const printWindow = window.open("", "", "width=600,height=700");
+        printWindow.document.write(`
+          <html>
+          <head>
+            <title>Print Receipt</title>
+            <style>
+              body { font-family: Arial, sans-serif; padding: 20px; }
+              h2 { text-align: center; }
+              table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+              th, td { border: 1px solid #333; padding: 10px; text-align: left; }
+              th { background-color: #f2f2f2; }
+              .center { text-align: center; margin-top: 20px; }
+            </style>
+          </head>
+          <body>
+            <h2>Receipt</h2>
+            <table>
+              <tr><th>Receipt ID</th><td>${data.receiptId}</td></tr>
+              <tr><th>Name</th><td>${data.name}</td></tr>
+              <tr><th>Purpose</th><td>${data.purpose}</td></tr>
+              <tr><th>Amount Due</th><td>${data.amountDue} ${data.currency}</td></tr>
+              <tr><th>Amount Paid</th><td>${data.amountPaid} ${data.currency}</td></tr>
+              <tr><th>Amount Remaining</th><td>${data.amountRemaining} ${data.currency}</td></tr>
+              <tr><th>Date</th><td>${data.timestamp}</td></tr>
+            </table>
+            <div class="center">
+              <button onclick="window.print();">Print</button>
+              <button onclick="window.close();">Close</button>
+            </div>
+          </body>
+          </html>
+        `);
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => printWindow.print(), 300);
+      };
+    });
   }
+
+  // Search input event
+  searchInput.addEventListener("input", () => {
+    filterRecords(searchInput.value);
+  });
 
   // Initial load
   fetchRecords();
