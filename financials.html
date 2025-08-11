@@ -211,9 +211,10 @@
   function renderRecords(records) {
     tbody.innerHTML = "";
     records.forEach(record => {
-      const amountDue = isNaN(record.amountDue) ? 0 : record.amountDue;
-      const amountPaid = isNaN(record.amountPaid) ? 0 : record.amountPaid;
-      const amountRemaining = amountDue - amountPaid;
+      const amountDue = Number(record.amountDue || 0);
+      const amountRemaining = Number(record.amountRemaining || 0);
+      // Calculate amountPaid from amountDue - amountRemaining
+      const amountPaid = amountDue - amountRemaining;
 
       const tr = document.createElement("tr");
       tr.dataset.receiptId = record.receiptId;
