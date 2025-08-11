@@ -147,43 +147,50 @@
       return;
     }
 
-    // Here you can add any client-side validation if needed
-
-    // Submit new credentials to backend to update
-    // Assuming you have an endpoint like 'editPrincipal' to update credentials
-    // If not, you might use 'editTeacher' with role check or a similar existing endpoint
-
-    // For demonstration, let's call a POST with action='editPrincipal' and role='principal'
-
-    const formData = new URLSearchParams();
-    formData.append('action', 'editPrincipal');  // You must have this handled in backend!
-    formData.append('role', 'principal');
-    formData.append('newId', newName);
-    formData.append('newPin', newPin);
-
     showMessage('Submitting new credentials...', 'black');
 
-    try {
-      const response = await fetch(url, {
-        method: 'POST',
-        body: formData
-      });
-      const data = await response.json();
+    // Try multiple guesses for parameter names for new name
+    const paramNameOptions = ['newName', 'newId', 'name'];
+    let responseData = null;
+    let success = false;
+    let lastError = '';
 
-      if (data.success) {
-        showMessage('Credentials updated successfully!', 'green');
-        // Optionally, clear storage and redirect to login
-        localStorage.removeItem('principalName');
-        localStorage.removeItem('principalPin');
-        setTimeout(() => {
-          window.location.href = 'principal_login.html';
-        }, 1500);
-      } else {
-        showMessage(data.message || 'Failed to update credentials.');
+    for (const paramName of paramNameOptions) {
+      const formData = new URLSearchParams();
+      formData.append('action', 'resetPrincipalCredentials');
+      formData.append('role', 'principal');
+      formData.append(paramName, newName);
+      formData.append('newPin', newPin);
+
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          body: formData
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          success = true;
+          responseData = data;
+          break;
+        } else {
+          lastError = data.message || 'Failed to update credentials.';
+        }
+      } catch (e) {
+        lastError = 'Network or server error.';
+        console.error(e);
       }
-    } catch (e) {
-      showMessage('Network or server error.');
-      console.error(e);
+    }
+
+    if (success) {
+      showMessage('Credentials updated successfully!', 'green');
+      localStorage.removeItem('principalName');
+      localStorage.removeItem('principalPin');
+      setTimeout(() => {
+        window.location.href = 'principal_login.html';
+      }, 1500);
+    } else {
+      showMessage(lastError || 'Failed to update credentials.');
     }
   }
 </script>
