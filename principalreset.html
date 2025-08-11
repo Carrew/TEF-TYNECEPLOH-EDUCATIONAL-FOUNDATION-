@@ -3,153 +3,189 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Principal Reset Credentials</title>
+<title>Reset Principal Credentials</title>
 <style>
   body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #667eea, #764ba2);
+    background: linear-gradient(135deg, #fce4ec, #f8bbd0);
+    display: flex;
+    justify-content: center;
+    align-items: center;
     min-height: 100vh;
     margin: 0; padding: 0;
-    display: flex; justify-content: center; align-items: center;
-    color: #fff;
   }
   .container {
-    background: #2c2f4a;
-    padding: 30px 40px;
+    background: white;
     border-radius: 12px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    padding: 30px 25px;
     width: 100%;
     max-width: 400px;
   }
-  h1 {
-    margin-bottom: 25px;
-    font-weight: 700;
+  h2 {
+    color: #d81b60;
     text-align: center;
-    color: #f1f1f1;
+    margin-bottom: 20px;
   }
   label {
+    font-weight: bold;
+    color: #333;
     display: block;
-    font-weight: 600;
-    margin-bottom: 6px;
-    margin-top: 18px;
+    margin-top: 10px;
   }
-  input[type="text"], input[type="password"] {
+  input {
     width: 100%;
-    padding: 10px 14px;
-    border-radius: 6px;
-    border: none;
-    font-size: 1rem;
-    box-sizing: border-box;
-    outline: none;
-    transition: box-shadow 0.3s ease;
-  }
-  input[type="text"]:focus, input[type="password"]:focus {
-    box-shadow: 0 0 6px 2px #8c78ff;
+    padding: 10px;
+    margin: 8px 0 18px 0;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 15px;
   }
   button {
-    margin-top: 28px;
     width: 100%;
-    padding: 12px 0;
-    background: #8c78ff;
+    background-color: #d81b60;
+    color: white;
     border: none;
+    padding: 12px;
     border-radius: 8px;
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: #fff;
+    font-size: 16px;
     cursor: pointer;
-    transition: background 0.3s ease;
+    transition: background-color 0.3s;
   }
   button:hover {
-    background: #6a54d9;
+    background-color: #880e4f;
   }
-  .message {
-    margin-top: 18px;
-    font-weight: 600;
+  #message {
     text-align: center;
+    margin-top: 15px;
+    font-size: 15px;
   }
-  .message.error {
-    color: #ff6b6b;
-  }
-  .message.success {
-    color: #6ee7b7;
-  }
-  small {
-    display: block;
-    margin-top: 6px;
-    color: #ccc;
-    font-size: 0.9rem;
-    text-align: center;
+  .hidden {
+    display: none;
   }
 </style>
 </head>
 <body>
 
 <div class="container">
-  <h1>Reset Principal Credentials</h1>
-  <form id="resetForm" autocomplete="off">
-    <input type="hidden" name="role" value="principal" />
-    
-    <label for="newName">New Principal Name</label>
-    <input type="text" id="newName" name="newName" placeholder="Enter new name" required minlength="3" />
 
-    <label for="newPin">New Principal PIN</label>
-    <input type="password" id="newPin" name="newPin" placeholder="Enter new PIN (4-6 digits)" pattern="\d{4,6}" required />
+  <!-- Step 1: Old credentials form -->
+  <div id="oldCredentialsSection">
+    <h2>Verify Old Credentials</h2>
+    <label for="oldName">Old Name</label>
+    <input type="text" id="oldName" placeholder="Enter old Name" />
+    <label for="oldPin">Old PIN</label>
+    <input type="password" id="oldPin" placeholder="Enter old PIN" />
+    <button onclick="verifyOldCredentials()">Verify</button>
+  </div>
 
-    <button type="submit">Reset Credentials</button>
-    <div id="message" class="message"></div>
-  </form>
-  <small>Note: Old name and PIN will be invalidated immediately after reset.</small>
+  <!-- Step 2: New credentials form -->
+  <div id="newCredentialsSection" class="hidden">
+    <h2>Set New Credentials</h2>
+    <label for="newName">New Name</label>
+    <input type="text" id="newName" placeholder="Enter new Name" />
+    <label for="newPin">New PIN</label>
+    <input type="password" id="newPin" placeholder="Enter new PIN" />
+    <button onclick="submitNewCredentials()">Submit</button>
+  </div>
+
+  <p id="message"></p>
 </div>
 
 <script>
-  const form = document.getElementById('resetForm');
-  const messageEl = document.getElementById('message');
-  const GAS_URL = 'https://script.google.com/macros/s/AKfycbw9P_XOd4k498l0e4WDbFqAF1asb2u4sRj_uX2B-2S1MvyWOeWQZqxy8dr13mPOdNOeuw/exec';
+  const url = 'https://script.google.com/macros/s/AKfycbw9P_XOd4k498l0e4WDbFqAF1asb2u4sRj_uX2B-2S1MvyWOeWQZqxy8dr13mPOdNOeuw/exec';
 
-  function showMessage(msg, type) {
-    messageEl.textContent = msg;
-    messageEl.className = 'message ' + (type || '');
+  function showMessage(msg, color = 'red') {
+    const message = document.getElementById('message');
+    message.style.color = color;
+    message.textContent = msg;
   }
 
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
+  async function verifyOldCredentials() {
+    const oldName = document.getElementById('oldName').value.trim();
+    const oldPin = document.getElementById('oldPin').value.trim();
 
-    const newName = form.newName.value.trim();
-    const newPin = form.newPin.value.trim();
-
-    if (newName.length < 3) {
-      showMessage('Name must be at least 3 characters long.', 'error');
+    if (!oldName || !oldPin) {
+      showMessage('Please enter old Name and PIN.');
       return;
     }
 
-    if (!/^\d{4,6}$/.test(newPin)) {
-      showMessage('PIN must be 4 to 6 digits.', 'error');
-      return;
-    }
-
-    const params = new URLSearchParams(new FormData(form));
-    params.append('action', 'resetPrincipalCredentials');
+    // Call backend login API with old credentials to verify
+    const formData = new URLSearchParams();
+    formData.append('action', 'login');
+    formData.append('role', 'principal');
+    formData.append('id', oldName);
+    formData.append('pin', oldPin);
 
     try {
-      const response = await fetch(GAS_URL, {
+      const response = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: params.toString()
+        body: formData
       });
+      const data = await response.json();
 
-      const result = await response.json();
-
-      if (result.success) {
-        showMessage('✅ Principal credentials reset successfully!', 'success');
-        form.reset();
+      if (data.success) {
+        showMessage('Old credentials verified. Please enter new credentials.', 'green');
+        // Hide old credentials section, show new credentials form
+        document.getElementById('oldCredentialsSection').classList.add('hidden');
+        document.getElementById('newCredentialsSection').classList.remove('hidden');
       } else {
-        showMessage('❌ ' + (result.message || 'Failed to reset credentials'), 'error');
+        showMessage(data.message || 'Old credentials verification failed.');
       }
-    } catch (error) {
-      showMessage('❌ Error connecting to server.', 'error');
-      console.error(error);
+    } catch (e) {
+      showMessage('Network or server error.');
+      console.error(e);
     }
-  });
+  }
+
+  async function submitNewCredentials() {
+    const newName = document.getElementById('newName').value.trim();
+    const newPin = document.getElementById('newPin').value.trim();
+
+    if (!newName || !newPin) {
+      showMessage('Please enter new Name and PIN.');
+      return;
+    }
+
+    // Here you can add any client-side validation if needed
+
+    // Submit new credentials to backend to update
+    // Assuming you have an endpoint like 'editPrincipal' to update credentials
+    // If not, you might use 'editTeacher' with role check or a similar existing endpoint
+
+    // For demonstration, let's call a POST with action='editPrincipal' and role='principal'
+
+    const formData = new URLSearchParams();
+    formData.append('action', 'editPrincipal');  // You must have this handled in backend!
+    formData.append('role', 'principal');
+    formData.append('newId', newName);
+    formData.append('newPin', newPin);
+
+    showMessage('Submitting new credentials...', 'black');
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        body: formData
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        showMessage('Credentials updated successfully!', 'green');
+        // Optionally, clear storage and redirect to login
+        localStorage.removeItem('principalName');
+        localStorage.removeItem('principalPin');
+        setTimeout(() => {
+          window.location.href = 'principal_login.html';
+        }, 1500);
+      } else {
+        showMessage(data.message || 'Failed to update credentials.');
+      }
+    } catch (e) {
+      showMessage('Network or server error.');
+      console.error(e);
+    }
+  }
 </script>
 
 </body>
