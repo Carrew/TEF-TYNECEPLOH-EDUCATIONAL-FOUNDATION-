@@ -1,135 +1,140 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Principal Login</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    /* Same styling as student & teacher login */
-    * {
-      box-sizing: border-box;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-    body {
-      margin: 0;
-      padding: 0;
-      background: linear-gradient(135deg, #fce4ec, #f8bbd0);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-    }
-    .login-container {
-      background: #ffffff;
-      padding: 40px 30px;
-      border-radius: 12px;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-      width: 100%;
-      max-width: 400px;
-    }
-    h2 {
-      text-align: center;
-      color: #d81b60;
-      margin-bottom: 20px;
-    }
-    label {
-      font-weight: bold;
-      color: #333;
-      display: block;
-      margin-top: 10px;
-    }
-    input {
-      width: 100%;
-      padding: 10px;
-      margin: 10px 0 20px 0;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      font-size: 15px;
-    }
-    button {
-      width: 100%;
-      background-color: #d81b60;
-      color: white;
-      border: none;
-      padding: 12px;
-      border-radius: 8px;
-      font-size: 16px;
-      cursor: pointer;
-      transition: background-color 0.3s;
-    }
-    button:hover {
-      background-color: #880e4f;
-    }
-    #result {
-      text-align: center;
-      margin-top: 15px;
-      font-size: 15px;
-    }
-    @media (max-width: 480px) {
-      .login-container {
-        padding: 30px 20px;
-      }
-    }
-  </style>
-</head>
-<body>
-  <div class="login-container">
-    <h2>Principal Login</h2>
+<!DOCTYPE html>  
+<html lang="en">  
+<head>  
+  <meta charset="UTF-8" />  
+  <title>Principal Login</title>  
+  <meta name="viewport" content="width=device-width, initial-scale=1" />  
+  <style>  
+    /* Same styling as student & teacher login */  
+    * {  
+      box-sizing: border-box;  
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;  
+    }  
+    body {  
+      margin: 0;  
+      padding: 0;  
+      background: linear-gradient(135deg, #fce4ec, #f8bbd0);  
+      display: flex;  
+      justify-content: center;  
+      align-items: center;  
+      height: 100vh;  
+    }  
+    .login-container {  
+      background: #ffffff;  
+      padding: 40px 30px;  
+      border-radius: 12px;  
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);  
+      width: 100%;  
+      max-width: 400px;  
+    }  
+    h2 {  
+      text-align: center;  
+      color: #d81b60;  
+      margin-bottom: 20px;  
+    }  
+    label {  
+      font-weight: bold;  
+      color: #333;  
+      display: block;  
+      margin-top: 10px;  
+    }  
+    input {  
+      width: 100%;  
+      padding: 10px;  
+      margin: 10px 0 20px 0;  
+      border: 1px solid #ccc;  
+      border-radius: 8px;  
+      font-size: 15px;  
+    }  
+    button {  
+      width: 100%;  
+      background-color: #d81b60;  
+      color: white;  
+      border: none;  
+      padding: 12px;  
+      border-radius: 8px;  
+      font-size: 16px;  
+      cursor: pointer;  
+      transition: background-color 0.3s;  
+    }  
+    button:hover {  
+      background-color: #880e4f;  
+    }  
+    #result {  
+      text-align: center;  
+      margin-top: 15px;  
+      font-size: 15px;  
+    }  
+    @media (max-width: 480px) {  
+      .login-container {  
+        padding: 30px 20px;  
+      }  
+    }  
+  </style>  
+</head>  
+<body>  
+  <div class="login-container">  
+    <h2>Principal Login</h2>  
+  
+    <label for="principalName">Name</label>  
+    <input type="text" id="principalName" placeholder="Enter your Name" />  
+  
+    <label for="pin">PIN</label>  
+    <input type="password" id="pin" placeholder="Enter your PIN" />  
+  
+    <button onclick="login()">Login</button>  
+    <p id="result"></p>  
+  </div>  
+  
+  <script>  
+    async function login() {  
+      const name = document.getElementById('principalName').value.trim();  
+      const pin = document.getElementById('pin').value.trim();  
+      const result = document.getElementById('result');  
+  
+      if (!name || !pin) {  
+        result.style.color = 'red';  
+        result.textContent = 'Please enter both Name and PIN.';  
+        return;  
+      }  
+  
+      const url = 'https://script.google.com/macros/s/AKfycbw9P_XOd4k498l0e4WDbFqAF1asb2u4sRj_uX2B-2S1MvyWOeWQZqxy8dr13mPOdNOeuw/exec';  
+  
+      const formData = new URLSearchParams();  
+      formData.append('action', 'login');  // required for router  
+      formData.append('role', 'principal');  
+      formData.append('id', name);  
+      formData.append('pin', pin);  
+  
+      try {  
+        const response = await fetch(url, {  
+          method: 'POST',  
+          body: formData  
+        });  
+  
+        const data = await response.json();  
+  
+        if (data.success) {  
+          result.style.color = 'green';  
+          result.textContent = `Login successful! Welcome, ${data.name}`;  
 
-    <label for="principalName">Name</label>
-    <input type="text" id="principalName" placeholder="Enter your Name" />
+          // Save credentials locally  
+          localStorage.setItem("principalName", name);  
+          localStorage.setItem("principalPin", pin);  
 
-    <label for="pin">PIN</label>
-    <input type="password" id="pin" placeholder="Enter your PIN" />
-
-    <button onclick="login()">Login</button>
-    <p id="result"></p>
-  </div>
-
-  <script>
-    async function login() {
-      const name = document.getElementById('principalName').value.trim();
-      const pin = document.getElementById('pin').value.trim();
-      const result = document.getElementById('result');
-
-      if (!name || !pin) {
-        result.style.color = 'red';
-        result.textContent = 'Please enter both Name and PIN.';
-        return;
-      }
-
-      const url = 'https://script.google.com/macros/s/AKfycbw9P_XOd4k498l0e4WDbFqAF1asb2u4sRj_uX2B-2S1MvyWOeWQZqxy8dr13mPOdNOeuw/exec';
-
-      const formData = new URLSearchParams();
-      formData.append('action', 'login');  // required for router
-      formData.append('role', 'principal');
-      formData.append('id', name);
-      formData.append('pin', pin);
-
-      try {
-        const response = await fetch(url, {
-          method: 'POST',
-          body: formData
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-          result.style.color = 'green';
-          result.textContent = `Login successful! Welcome, ${data.name}`;
-          setTimeout(() => {
-            window.location.href = `principal_dashboard.html?principalName=${encodeURIComponent(name)}`;
-          }, 1000);
-        } else {
-          result.style.color = 'red';
-          result.textContent = data.message;
-        }
-      } catch (error) {
-        result.style.color = 'red';
-        result.textContent = 'Network error or server issue.';
-        console.error(error);
-      }
-    }
-  </script>
-</body>
+          setTimeout(() => {  
+            window.location.href = `principal_dashboard.html?principalName=${encodeURIComponent(name)}`;  
+          }, 1000);  
+        } else {  
+          result.style.color = 'red';  
+          result.textContent = data.message;  
+        }  
+      } catch (error) {  
+        result.style.color = 'red';  
+        result.textContent = 'Network error or server issue.';  
+        console.error(error);  
+      }  
+    }  
+  </script>  
+</body>  
 </html>
