@@ -42,10 +42,26 @@
       background: #fff;
       border-radius: 12px;
       box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      margin-bottom: 2rem;
     }
     h2 {
       color: #d63384;
       margin-top: 2rem;
+    }
+    .announcement {
+      border: 1px solid #d63384;
+      padding: 12px;
+      margin-bottom: 12px;
+      border-radius: 8px;
+      background: #ffe4f1;
+    }
+    .announcement h3 {
+      margin: 0 0 6px;
+      color: #a02363;
+    }
+    .announcement small {
+      color: #7a486b;
+      font-size: 0.85em;
     }
     footer {
       background-color: #4b2e2e;
@@ -53,6 +69,9 @@
       text-align: center;
       padding: 1rem;
       margin-top: 2rem;
+    }
+    #announcements {
+      min-height: 50px;
     }
   </style>
 </head>
@@ -81,6 +100,9 @@
       Tyneceploh Educational Foundation was founded in 2018 to serve students from Nursery to 9th Grade. The school was established to close the educational gap in the Rehab Road community. It currently hosts 100 students and 10 teachers, aiming to provide holistic and accessible learning to all children.
     </p>
 
+    <h2>Announcements</h2>
+    <div id="announcements">Loading announcements...</div>
+
     <h2>Contact Us</h2>
     <p>📞 0778847625 | 0777515669 | 0886515669</p>
     <p>📧 tyneceploheducational2018@gmail.com</p>
@@ -89,5 +111,49 @@
   <footer>
     &copy; 2025 Tyneceploh Educational Foundation. All rights reserved.
   </footer>
+
+  <script>
+    const announcementsContainer = document.getElementById('announcements');
+    const baseUrl = "https://script.google.com/macros/s/AKfycbw9P_XOd4k498l0e4WDbFqAF1asb2u4sRj_uX2B-2S1MvyWOeWQZqxy8dr13mPOdNOeuw/exec";
+
+    // Escape HTML to prevent XSS
+    function escapeHtml(text) {
+      return text.replace(/[&<>"']/g, function(m) {
+        return {'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'}[m];
+      });
+    }
+
+    async function loadAnnouncements() {
+      announcementsContainer.textContent = 'Loading announcements...';
+      try {
+        const res = await fetch(baseUrl + '?action=getAnnouncements');
+        if (!res.ok) throw new Error('Network response was not ok');
+
+        const data = await res.json();
+
+        if (data.success && data.announcements.length > 0) {
+          announcementsContainer.innerHTML = '';
+          data.announcements.forEach(item => {
+            const dateStr = new Date(item.date).toLocaleDateString();
+            const div = document.createElement('div');
+            div.className = 'announcement';
+            div.innerHTML = `
+              <h3>${escapeHtml(item.title || 'No Title')}</h3>
+              <small>${dateStr}</small>
+              <p>${escapeHtml(item.message || '')}</p>
+            `;
+            announcementsContainer.appendChild(div);
+          });
+        } else {
+          announcementsContainer.textContent = 'No announcements at this time.';
+        }
+      } catch (err) {
+        announcementsContainer.textContent = 'Failed to load announcements: ' + err.message;
+      }
+    }
+
+    // Load announcements when page loads
+    window.addEventListener('DOMContentLoaded', loadAnnouncements);
+  </script>
 </body>
 </html>
