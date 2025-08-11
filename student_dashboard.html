@@ -13,6 +13,9 @@
 
     h2 {
       color: #333;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
     #filterContainer {
@@ -58,19 +61,22 @@
     }
 
     #logoutBtn {
-      margin-top: 20px;
       background: #c62828;
       color: white;
-      padding: 10px 16px;
+      padding: 8px 12px;
       border: none;
       border-radius: 6px;
       cursor: pointer;
+      font-size: 14px;
     }
   </style>
 </head>
 <body>
 
-  <h2>Welcome, Student</h2>
+  <h2>
+    <span id="studentName">Welcome, Student</span>
+    <button id="logoutBtn" onclick="logout()">Logout</button>
+  </h2>
 
   <div id="filterContainer">
     <label for="periodFilter">Filter by Period: </label>
@@ -85,23 +91,25 @@
         <th>Subject</th>
         <th>Score</th>
         <th>Period</th>
-        <th>Teacher</th>
       </tr>
     </thead>
     <tbody></tbody>
   </table>
 
   <div id="averageScore"></div>
-  <button id="logoutBtn" onclick="logout()">Logout</button>
 
   <script>
     const API_URL = 'https://script.google.com/macros/s/AKfycbw9P_XOd4k498l0e4WDbFqAF1asb2u4sRj_uX2B-2S1MvyWOeWQZqxy8dr13mPOdNOeuw/exec';
     const studentId = localStorage.getItem("studentId");
+    const studentName = localStorage.getItem("studentName");
 
     if (!studentId) {
       alert("Access Denied. Please login.");
       window.location.href = "login.html";
     }
+
+    // Display student's name
+    document.getElementById("studentName").textContent = `Welcome, ${studentName || "Student"}`;
 
     let gradesData = [];
 
@@ -159,13 +167,9 @@
         const periodCell = document.createElement("td");
         periodCell.textContent = grade.Period;
 
-        const teacher = document.createElement("td");
-        teacher.textContent = grade.TeacherID;
-
         tr.appendChild(subject);
         tr.appendChild(score);
         tr.appendChild(periodCell);
-        tr.appendChild(teacher);
 
         tbody.appendChild(tr);
 
