@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Principal Reset Credentials</title>
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    min-height: 100vh;
+    margin: 0; padding: 0;
+    display: flex; justify-content: center; align-items: center;
+    color: #fff;
+  }
+  .container {
+    background: #2c2f4a;
+    padding: 30px 40px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+    width: 100%;
+    max-width: 400px;
+  }
+  h1 {
+    margin-bottom: 25px;
+    font-weight: 700;
+    text-align: center;
+    color: #f1f1f1;
+  }
+  label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 6px;
+    margin-top: 18px;
+  }
+  input[type="text"], input[type="password"] {
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: 6px;
+    border: none;
+    font-size: 1rem;
+    box-sizing: border-box;
+    outline: none;
+    transition: box-shadow 0.3s ease;
+  }
+  input[type="text"]:focus, input[type="password"]:focus {
+    box-shadow: 0 0 6px 2px #8c78ff;
+  }
+  button {
+    margin-top: 28px;
+    width: 100%;
+    padding: 12px 0;
+    background: #8c78ff;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.3s ease;
+  }
+  button:hover {
+    background: #6a54d9;
+  }
+  .message {
+    margin-top: 18px;
+    font-weight: 600;
+    text-align: center;
+  }
+  .message.error {
+    color: #ff6b6b;
+  }
+  .message.success {
+    color: #6ee7b7;
+  }
+  small {
+    display: block;
+    margin-top: 6px;
+    color: #ccc;
+    font-size: 0.9rem;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Reset Principal Credentials</h1>
+  <form id="resetForm" autocomplete="off">
+    <input type="hidden" name="role" value="principal" />
+    
+    <label for="newName">New Principal Name</label>
+    <input type="text" id="newName" name="newName" placeholder="Enter new name" required minlength="3" />
+
+    <label for="newPin">New Principal PIN</label>
+    <input type="password" id="newPin" name="newPin" placeholder="Enter new PIN (4-6 digits)" pattern="\d{4,6}" required />
+
+    <button type="submit">Reset Credentials</button>
+    <div id="message" class="message"></div>
+  </form>
+  <small>Note: Old name and PIN will be invalidated immediately after reset.</small>
+</div>
+
+<script>
+  const form = document.getElementById('resetForm');
+  const messageEl = document.getElementById('message');
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbw9P_XOd4k498l0e4WDbFqAF1asb2u4sRj_uX2B-2S1MvyWOeWQZqxy8dr13mPOdNOeuw/exec';
+
+  function showMessage(msg, type) {
+    messageEl.textContent = msg;
+    messageEl.className = 'message ' + (type || '');
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const newName = form.newName.value.trim();
+    const newPin = form.newPin.value.trim();
+
+    if (newName.length < 3) {
+      showMessage('Name must be at least 3 characters long.', 'error');
+      return;
+    }
+
+    if (!/^\d{4,6}$/.test(newPin)) {
+      showMessage('PIN must be 4 to 6 digits.', 'error');
+      return;
+    }
+
+    const params = new URLSearchParams(new FormData(form));
+    params.append('action', 'resetPrincipalCredentials');
+
+    try {
+      const response = await fetch(GAS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: params.toString()
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        showMessage('✅ Principal credentials reset successfully!', 'success');
+        form.reset();
+      } else {
+        showMessage('❌ ' + (result.message || 'Failed to reset credentials'), 'error');
+      }
+    } catch (error) {
+      showMessage('❌ Error connecting to server.', 'error');
+      console.error(error);
+    }
+  });
+</script>
+
+</body>
+</html>
