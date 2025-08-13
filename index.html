@@ -28,13 +28,13 @@
       font-size: 2.8rem;
       margin-bottom: 0.3rem;
       text-transform: uppercase;
-      text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+      text-shadow: 0.5px 0.5px 1.5px rgba(0,0,0,0.25);
     }
     header p {
       font-size: 1.25rem;
       font-weight: 500;
       letter-spacing: 0.07em;
-      text-shadow: 1px 1px 3px rgba(0,0,0,0.25);
+      text-shadow: 0.5px 0.5px 1.5px rgba(0,0,0,0.2);
       margin-top: 0;
     }
 
@@ -167,21 +167,20 @@
       margin-bottom: 0.3rem;
     }
 
-    /* School Ode Handwriting Style */
+    /* School Ode plain font but keep background & border */
     .school-ode {
-      font-family: 'Lucida Handwriting', 'Brush Script MT', cursive, 'Segoe UI', sans-serif;
-      font-weight: 700;
-      font-size: 1.22rem;
-      line-height: 1.4;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-weight: 500;
+      font-size: 1.05rem;
+      line-height: 1.6;
       max-width: 750px;
       margin: 1rem auto 3rem auto;
-      color: #7a1f52;
+      color: #4b2e2e;
       border-left: 5px solid #d63384;
       padding-left: 1.2rem;
       background: #ffe4f1;
       border-radius: 10px;
       box-shadow: inset 3px 3px 8px rgba(182, 27, 102, 0.1);
-      user-select: none;
       white-space: pre-wrap;
     }
     .school-ode small {
@@ -279,10 +278,11 @@
   <header>
     <h1>Tyneceploh Educational Foundation</h1>
     <p>Nursery – 9th Grade | Rehab Road, ELWA, Liberia</p>
+    <p><em>Motto: Engaging minds, Nurturing Hearts, Shaping God's world.</em></p>
   </header>
 
   <nav>
-    <button onclick="location.href='principal_login.html'">Principal Login</button>
+    <button onclick="location.href='principal_login.html'">Proprietor Login</button>
     <button onclick="location.href='teacher_login.html'">Teacher Login</button>
     <button onclick="location.href='student_login.html'">Student Results Checker</button>
   </nav>
@@ -327,6 +327,7 @@
       I will be an achiever</strong>
     </div>
 
+    <h3>School Ode</h3>
     <div class="school-ode" aria-label="School Ode">
       We meet here from all walks of life<br>
       From different homes and families<br>
@@ -368,7 +369,6 @@
     const announcementsContainer = document.getElementById('announcements');
     const baseUrl = "https://script.google.com/macros/s/AKfycbw9P_XOd4k498l0e4WDbFqAF1asb2u4sRj_uX2B-2S1MvyWOeWQZqxy8dr13mPOdNOeuw/exec";
 
-    // Escape HTML to prevent XSS
     function escapeHtml(text) {
       return text.replace(/[&<>"']/g, function(m) {
         return {'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'}[m];
