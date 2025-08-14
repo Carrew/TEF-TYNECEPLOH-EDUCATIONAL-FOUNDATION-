@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Teacher Dashboard</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 20px; }
+  h1 { color: #333; }
+  table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+  th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+  th { background-color: #f4f4f4; }
+  input, textarea, select { width: 100%; padding: 6px; margin: 4px 0; }
+  button { padding: 8px 12px; margin-top: 10px; }
+</style>
+</head>
+<body>
+
+<h1>Welcome, <span id="teacherName"></span></h1>
+
+<h2>Add Assignment</h2>
+<div>
+  <label>Class:</label>
+  <select id="assignmentClass"></select>
+  <label>Title:</label>
+  <input type="text" id="assignmentTitle" placeholder="Enter assignment title">
+  <label>Description:</label>
+  <textarea id="assignmentDescription" placeholder="Enter assignment description"></textarea>
+  <button onclick="addAssignment()">Add Assignment</button>
+</div>
+
+<h2>Your Assignments</h2>
+<table id="assignmentTable">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Class</th>
+      <th>Title</th>
+      <th>Description</th>
+      <th>Date Added</th>
+      <th>Action</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<script>
+const API_URL = 'https://script.google.com/macros/s/AKfycbw9P_XOd4k498l0e4WDbFqAF1asb2u4sRj_uX2B-2S1MvyWOeWQZqxy8dr13mPOdNOeuw/exec';
+
+// Get teacher info from localStorage
+const teacher = JSON.parse(localStorage.getItem('teacher'));
+if (!teacher) {
+  alert('You are not logged in!');
+  window.location.href = 'login.html';
+} else {
+  document.getElementById('teacherName').innerText = teacher.Name || teacher.TeacherName || 'Teacher';
+  populateClasses(teacher.Classes);
+  loadAssignments();
+}
+
+// Populate class dropdown
+function populateClasses(classesStr) {
+  const classSelect = document.getElementById('assignmentClass');
+  classSelect.innerHTML = '';
+  const classes = classesStr.split(',').map(c => c.trim());
+  classes.forEach(c => {
+    const option = document.createElement('option');
+    option.value = c;
+    option.text = c;
+    classSelect.appendChild(option);
+  });
+}
+
+// Load assignments for this teacher
+function loadAssignments() {
+  const params = new URLSearchParams({
+    action: 'getAssignments',
+    role: 'teacher',
+    teacherId: teacher.TeacherID
+  });
+
+  fetch(`${API_URL}?${params}`)
+    .then(res => res.json())
+    .then(data => {
+      const tbody = document.querySelector('#assignmentTable tbody');
+      tbody.innerHTML = '';
+      if (data.success && data.assignments.length) {
+        data.assignments.forEach(a => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${a.AssignmentID}</td>
+            <td>${a.Class}</td>
+            <td>${a.Title}</td>
+            <td>${a.Description}</td>
+            <td>${new Date(a.Timestamp).toLocaleString()}</td>
+            <td><button onclick="deleteAssignment('${a.AssignmentID}')">Delete</button></td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } else {
+        tbody.innerHTML = '<tr><td colspan="6">No assignments found.</td></tr>';
+      }
+    })
+    .catch(err => console.error(err));
+}
+
+// Add new assignment
+function addAssignment() {
+  const className = document.getElementById('assignmentClass').value;
+  const title = document.getElementById('assignmentTitle').value;
+  const description = document.getElementById('assignmentDescription').value;
+
+  if (!title) { alert('Title is required'); return; }
+
+  const formData = new URLSearchParams({
+    action: 'addAssignment',
+    teacherId: teacher.TeacherID,
+    class: className,
+    title,
+    description
+  });
+
+  fetch(API_URL, { method: 'POST', body: formData })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        alert('Assignment added!');
+        loadAssignments();
+        document.getElementById('assignmentTitle').value = '';
+        document.getElementById('assignmentDescription').value = '';
+      } else {
+        alert(data.message || 'Failed to add assignment.');
+      }
+    })
+    .catch(err => console.error(err));
+}
+
+// Delete assignment
+function deleteAssignment(id) {
+  if (!confirm('Delete this assignment?')) return;
+
+  const formData = new URLSearchParams({
+    action: 'deleteAssignment',
+    teacherId: teacher.TeacherID,
+    assignmentId: id
+  });
+
+  fetch(API_URL, { method: 'POST', body: formData })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        alert('Assignment deleted!');
+        loadAssignments();
+      } else {
+        alert(data.message || 'Failed to delete assignment.');
+      }
+    })
+    .catch(err => console.error(err));
+}
+</script>
+
+</body>
+</html>
