@@ -85,6 +85,8 @@
   </div>
 
   <script>
+    const API_URL = 'https://script.google.com/macros/s/AKfycbw9P_XOd4k498l0e4WDbFqAF1asb2u4sRj_uX2B-2S1MvyWOeWQZqxy8dr13mPOdNOeuw/exec';
+
     async function login() {
       const teacherId = document.getElementById('teacherId').value.trim();
       const pin = document.getElementById('pin').value.trim();
@@ -99,8 +101,6 @@
       result.style.color = '#800000';
       result.textContent = 'Loading...';
 
-      const url = 'https://script.google.com/macros/s/AKfycbw9P_XOd4k498l0e4WDbFqAF1asb2u4sRj_uX2B-2S1MvyWOeWQZqxy8dr13mPOdNOeuw/exec';
-
       const formData = new URLSearchParams();
       formData.append('action', 'login');
       formData.append('role', 'teacher');
@@ -108,7 +108,7 @@
       formData.append('pin', pin);
 
       try {
-        const response = await fetch(url, {
+        const response = await fetch(API_URL, {
           method: 'POST',
           body: formData
         });
@@ -119,9 +119,12 @@
           result.style.color = 'green';
           result.textContent = `Login successful! Welcome, ${data.name}`;
 
-          // Save teacher info to localStorage
-          localStorage.setItem('teacherId', teacherId);
-          localStorage.setItem('teacherName', data.name);
+          // Save full teacher object to localStorage for assignments dashboard
+          localStorage.setItem('teacher', JSON.stringify({
+            TeacherID: teacherId,
+            Name: data.name,
+            Classes: data.classes // make sure your login GS returns 'classes' field
+          }));
 
           setTimeout(() => {
             window.location.href = 'teacher_dashboard.html';
