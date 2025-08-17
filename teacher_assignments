@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Teacher Assignments Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f4f9; padding: 20px; }
+  h2 { color: #800000; text-align: center; margin-bottom: 20px; }
+  .section { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); margin-bottom: 20px; }
+
+  select, input, textarea, button {
+    width: 100%;
+    padding: 10px;
+    margin: 6px 0;
+    border-radius: 8px;
+    border: 1.5px solid #800000;
+    font-size: 16px;
+  }
+  textarea { min-height: 120px; } /* larger description box */
+  button { background-color: #800000; color: white; font-weight: 700; cursor: pointer; transition: background-color 0.3s; }
+  button:hover { background-color: #b22222; }
+
+  table { width: 100%; border-collapse: collapse; margin-top: 20px; table-layout: fixed; }
+  th, td { border: 1px solid #ccc; padding: 8px; text-align: left; word-wrap: break-word; }
+  th { background-color: #eee; }
+
+  /* Column widths */
+  th.class-col, td.class-col { width: 50px; }
+  th.title-col, td.title-col { width: 100px; }
+  th.desc-col, td.desc-col { width: 200px; }
+  th.due-col, td.due-col { width: 80px; }
+  th.given-col, td.given-col { width: 80px; }
+  th.view-col, td.view-col { width: 80px; }
+
+</style>
+</head>
+<body>
+
+<h2>Welcome Teacher: <span id="teacherName"></span></h2>
+
+<div class="section">
+  <h3>Add New Assignment</h3>
+  <select id="classSelect"></select>
+  <input type="text" id="title" placeholder="Title">
+  <textarea id="description" placeholder="Description"></textarea>
+  <input type="datetime-local" id="dueDate"> <!-- Optional time included -->
+  <button onclick="addAssignment()">Submit Assignment</button>
+</div>
+
+<div class="section">
+  <h3>My Assignments</h3>
+  <table id="assignmentsTable">
+    <thead>
+      <tr>
+        <th class="class-col">Class</th>
+        <th class="title-col">Title</th>
+        <th class="desc-col">Description</th>
+        <th class="due-col">Date Due</th>
+        <th class="given-col">Date Given</th>
+        <th class="view-col">View Full</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<script>
+const API_URL = 'https://script.google.com/macros/s/AKfycbw9P_XOd4k498l0e4WDbFqAF1asb2u4sRj_uX2B-2S1MvyWOeWQZqxy8dr13mPOdNOeuw/exec';
+
+// Retrieve teacher info from login
+const teacher = JSON.parse(localStorage.getItem('teacher'));
+if (!teacher) {
+  alert("No teacher info found. Please login first.");
+  window.location.href = 'teacher_login.html';
+}
+
+// Display teacher name
+document.getElementById('teacherName').textContent = teacher.Name || teacher.TeacherID;
+
+// Populate class dropdown
+const classSelect = document.getElementById("classSelect");
+teacher.Classes.forEach(cls => {
+  const option = document.createElement("option");
+  option.value = cls;
+  option.textContent = cls;
+  classSelect.appendChild(option);
+});
+
+// GET helper
+function fetchData(action, params={}) {
+  const urlParams = new URLSearchParams({ action, role: 'teacher', teacherId: teacher.TeacherID, ...params });
+  return fetch(`${API_URL}?${urlParams.toString()}`).then(r => r.json());
+}
+
+// POST helper
+function postData(action, params={}) {
+  const body = new URLSearchParams({ action, role: 'teacher', teacherId: teacher.TeacherID, ...params });
+  return fetch(API_URL, { method: 'POST', body }).then(r => r.json());
+}
+
+// Format date + time
+function formatDate(dateStr) {
+  const d = new Date(dateStr);
+  const date = d.toLocaleDateString();
+  const time = d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+  return `${date}\n${time}`;
+}
+
+// Load assignments
+function loadAssignments() {
+  fetchData('getTeacherAssignments').then(res => {
+    const tbody = document.querySelector("#assignmentsTable tbody");
+    tbody.innerHTML = '';
+    if (res.success && res.assignments.length > 0) {
+      res.assignments.forEach(a => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td class="class-col">${a.Class}</td>
+          <td class="title-col">${a.Title}</td>
+          <td class="desc-col">${a.Description.substring(0, 50)}...</td>
+          <td class="due-col">${formatDate(a.DueDate)}</td>
+          <td class="given-col">${formatDate(a.Timestamp)}</td>
+          <td class="view-col"><button onclick="viewAssignment('${a.Title.replace(/'/g,"\\'")}', '${a.Description.replace(/'/g,"\\'")}', '${a.DueDate}', '${a.Timestamp}')">View Full</button></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    } else {
+      tbody.innerHTML = "<tr><td colspan='6'>No assignments found</td></tr>";
+    }
+  });
+}
+
+// Add new assignment
+function addAssignment() {
+  const className = classSelect.value;
+  const title = document.getElementById("title").value.trim();
+  const description = document.getElementById("description").value.trim();
+  const dueDate = document.getElementById("dueDate").value;
+
+  if (!className || !title || !description || !dueDate) {
+    alert("Fill all fields");
+    return;
+  }
+
+  postData('addAssignment', { class: className, title, description, dueDate }).then(res => {
+    alert(res.message || "Assignment added");
+    document.getElementById("title").value = '';
+    document.getElementById("description").value = '';
+    document.getElementById("dueDate").value = '';
+    loadAssignments();
+  });
+}
+
+// View full assignment in new window
+function viewAssignment(title, description, dueDate, timestamp) {
+  const newWindow = window.open("", "_blank", "width=700,height=500,scrollbars=yes");
+  newWindow.document.write(`
+    <html>
+      <head>
+        <title>${title}</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 20px; line-height: 1.5; background: #f4f4f9; }
+          h2 { color: #800000; margin-bottom: 10px; }
+          p { margin-bottom: 15px; }
+        </style>
+      </head>
+      <body>
+        <h2>${title}</h2>
+        <p><strong>Class:</strong> ${teacher.Classes.join(", ")}</p>
+        <p><strong>Description:</strong><br>${description}</p>
+        <p><strong>Due Date:</strong><br>${formatDate(dueDate)}</p>
+        <p><strong>Date Given:</strong><br>${formatDate(timestamp)}</p>
+      </body>
+    </html>
+  `);
+}
+
+// Initial load
+loadAssignments();
+</script>
+
+</body>
+</html>
