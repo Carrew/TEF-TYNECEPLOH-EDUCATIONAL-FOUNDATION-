@@ -119,11 +119,10 @@
           result.style.color = 'green';
           result.textContent = `Login successful! Welcome, ${data.name}`;
 
-          // Save full teacher object to localStorage for assignments dashboard
+          // Save all info received from API to localStorage
           localStorage.setItem('teacher', JSON.stringify({
             TeacherID: teacherId,
-            Name: data.name,
-            Classes: data.classes // make sure your login GS returns 'classes' field
+            ...data
           }));
 
           setTimeout(() => {
