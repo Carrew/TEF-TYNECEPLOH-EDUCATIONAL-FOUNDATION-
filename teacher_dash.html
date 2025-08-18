@@ -72,19 +72,24 @@
     // Load teacher info from localStorage
     const teacher = JSON.parse(localStorage.getItem('teacher'));
 
-    if (!teacher) {
+    if (!teacher || !teacher.TeacherID) {
       alert('No teacher info found. Please login.');
       window.location.href = 'teacher_login.html';
     } else {
+      // Display welcome text
       document.getElementById('welcomeText').textContent = `Welcome, ${teacher.Name}`;
     }
 
-    // Button actions
+    // Buttons redirect and preserve all saved info
     document.getElementById('classroomBtn').addEventListener('click', () => {
-      window.location.href = 'teacher_assignment.html';
+      // Ensure info is still in localStorage for the next page
+      localStorage.setItem('teacher', JSON.stringify(teacher));
+      window.location.href = 'student_assignment.html';
     });
 
     document.getElementById('gradeSheetBtn').addEventListener('click', () => {
+      // Ensure info is still in localStorage for the next page
+      localStorage.setItem('teacher', JSON.stringify(teacher));
       window.location.href = 'teacher_grade.html';
     });
   </script>
