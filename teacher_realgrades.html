@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Teacher Master Grade Sheet</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 20px; max-width: 800px; }
+  h1 { margin-bottom: 0; }
+  #teacherInfo { margin-bottom: 20px; }
+  label { display: block; margin-top: 10px; font-weight: bold; }
+  select, input, button { padding: 6px; margin-top: 5px; font-size: 1rem; width: 100%; max-width: 400px; }
+  button { margin-top: 15px; cursor: pointer; }
+  #errorMsg, #successMsg { margin-top: 10px; }
+  #errorMsg { color: red; }
+  #successMsg { color: green; }
+  table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+  th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+  th { background: #eee; }
+</style>
+</head>
+<body>
+
+<h1>Teacher Dashboard</h1>
+
+<div id="teacherInfo">
+  <p><strong>Name:</strong> <span id="teacherName">Loading...</span></p>
+  <p><strong>ID:</strong> <span id="teacherId">Loading...</span></p>
+</div>
+
+<div>
+  <label for="studentSelect">Select Assigned Student:</label>
+  <select id="studentSelect">
+    <option>Loading students...</option>
+  </select>
+  <div id="errorMsg"></div>
+  <div id="successMsg"></div>
+</div>
+
+<!-- Grades display -->
+<div id="gradesSection" style="display:none;">
+  <h2>Grades for <span id="selectedStudentName"></span></h2>
+
+  <h3>Approved Grades</h3>
+  <table id="approvedGradesTable">
+    <thead><tr><th>Subject</th><th>Score</th><th>Period</th></tr></thead>
+    <tbody></tbody>
+  </table>
+
+  <h3>Rejected Grades</h3>
+  <table id="rejectedGradesTable">
+    <thead><tr><th>Subject</th><th>Score</th><th>Period</th><th>Reject Reason</th><th>Actions</th></tr></thead>
+    <tbody></tbody>
+  </table>
+
+  <h3>Submitted Grades</h3>
+  <table id="submittedGradesTable">
+    <thead><tr><th>Subject</th><th>Score</th><th>Period</th></tr></thead>
+    <tbody></tbody>
+  </table>
+
+  <h3>Submit New Grade</h3>
+  <form id="submitGradeForm">
+    <label>Subject:
+      <input type="text" name="subject" required />
+    </label>
+    <label>Score:
+      <input type="number" name="score" min="0" max="100" required />
+    </label>
+    <label>Period:
+      <select name="period" required>
+        <option value="">Select period</option>
+        <option value="1st Period">1st Period</option>
+        <option value="2nd Period">2nd Period</option>
+        <option value="3rd Period">3rd Period</option>
+        <option value="Semester Exam">Semester Exam</option>
+        <option value="4th Period">4th Period</option>
+        <option value="5th Period">5th Period</option>
+        <option value="6th Period">6th Period</option>
+        <option value="Final Exam">Final Exam</option>
+      </select>
+    </label>
+    <button type="submit">Submit Grade</button>
+  </form>
+</div>
+
+<!-- Edit rejected grade modal -->
+<div id="editRejectedGradeModal" style="display:none; position:fixed; top:10%; left:50%; transform:translateX(-50%); background:#fff; border:1px solid #ccc; padding:20px; max-width:400px; z-index:100;">
+  <h3>Edit Rejected Grade</h3>
+  <form id="editRejectedGradeForm">
+    <input type="hidden" name="rowNumber" />
+    <label>Subject:
+      <input type="text" name="subject" required />
+    </label>
+    <label>Score:
+      <input type="number" name="score" min="0" max="100" required />
+    </label>
+    <label>Period:
+      <select name="period" required>
+        <option value="">Select period</option>
+        <option value="1st Period">1st Period</option>
+        <option value="2nd Period">2nd Period</option>
+        <option value="3rd Period">3rd Period</option>
+        <option value="Semester Exam">Semester Exam</option>
+        <option value="4th Period">4th Period</option>
+        <option value="5th Period">5th Period</option>
+        <option value="6th Period">6th Period</option>
+        <option value="Final Exam">Final Exam</option>
+      </select>
+    </label>
+    <button type="submit">Update Grade</button>
+    <button type="button" id="cancelEditRejected">Cancel</button>
+  </form>
+  </div>
+  <script>
+const GAS_URL = "https://script.google.com/macros/s/AKfycbw9P_XOd4k498l0e4WDbFqAF1asb2u4sRj_uX2B-2S1MvyWOeWQZqxy8dr13mPOdNOeuw/exec";
+
+let teacherId = null;
+let teacherName = null;
+let selectedStudentId = null;
+let selectedStudentName = null;
+
+const studentSelect = document.getElementById('studentSelect');
+const errorMsg = document.getElementById('errorMsg');
+const successMsg = document.getElementById('successMsg');
+const gradesSection = document.getElementById('gradesSection');
+const selectedStudentNameSpan = document.getElementById('selectedStudentName');
+
+// Display teacher info and load students
+function displayTeacherInfo() {
+  teacherId = localStorage.getItem("teacherId");
+  teacherName = localStorage.getItem("teacherName") || "Unknown";
+
+  if (!teacherId) {
+    errorMsg.textContent = "Teacher ID missing. Please login.";
+    document.getElementById("teacherName").textContent = "-";
+    document.getElementById("teacherId").textContent = "-";
+    return;
+  }
+  document.getElementById("teacherName").textContent = teacherName;
+  document.getElementById("teacherId").textContent = teacherId;
+
+  loadStudents(teacherId);
+}
+
+function loadStudents(tid) {
+  studentSelect.innerHTML = '<option>Loading students...</option>';
+  errorMsg.textContent = "";
+  successMsg.textContent = "";
+  gradesSection.style.display = 'none';
+
+  fetch(`${GAS_URL}?action=getStudentList&role=teacher&teacherId=${encodeURIComponent(tid)}`)
+    .then(res => res.json())
+    .then(data => {
+      if (!data.success) throw new Error(data.message);
+      if (!data.data.length) {
+        studentSelect.innerHTML = '<option>No students assigned</option>';
+        return;
+      }
+      studentSelect.innerHTML = '<option value="">-- Select a student --</option>';
+      data.data.forEach(student => {
+        const opt = document.createElement('option');
+        opt.value = student.StudentID || student.ID || '';
+        opt.textContent = student.Name || student.FullName || 'Unnamed Student';
+        studentSelect.appendChild(opt);
+      });
+    })
+    .catch(err => {
+      studentSelect.innerHTML = '<option>Error loading students</option>';
+      errorMsg.textContent = "Error loading students: " + err.message;
+    });
+}
+
+studentSelect.addEventListener('change', () => {
+  selectedStudentId = studentSelect.value;
+  selectedStudentName = studentSelect.options[studentSelect.selectedIndex]?.text || '';
+  if (!selectedStudentId) {
+    gradesSection.style.display = 'none';
+    errorMsg.textContent = "Please select a student.";
+    return;
+  }
+  errorMsg.textContent = "";
+  successMsg.textContent = "";
+  selectedStudentNameSpan.textContent = selectedStudentName;
+  gradesSection.style.display = 'block';
+
+  loadGrades('getTeacherGrades', 'approvedGradesTable');
+  loadGrades('getRejectedGradesWithRow', 'rejectedGradesTable'); // ✅ uses function that includes row
+  loadGrades('viewSubmittedGrades', 'submittedGradesTable');
+});
+
+// Load grades
+function loadGrades(type, tableId) {
+  const tableBody = document.querySelector(`#${tableId} tbody`);
+  tableBody.innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
+
+  fetch(`${GAS_URL}?action=${type}&role=teacher&teacherId=${encodeURIComponent(teacherId)}`)
+    .then(res => res.json())
+    .then(data => {
+      if (!data.success) throw new Error(data.message);
+      const grades = data.data.filter(g => g.StudentID === selectedStudentId);
+      if (!grades.length) {
+        tableBody.innerHTML = `<tr><td colspan="${tableId==='rejectedGradesTable'?5:3}">No grades found</td></tr>`;
+        return;
+      }
+      tableBody.innerHTML = "";
+      grades.forEach(grade => {
+        let row = document.createElement('tr');
+        row.dataset.rowNumber = grade._rowNumber || '';
+        if (tableId === 'rejectedGradesTable') {
+          row.innerHTML = `
+            <td>${grade.Subject}</td>
+            <td>${grade.Score}</td>
+            <td>${grade.Period}</td>
+            <td>${grade.RejectReason || ""}</td>
+            <td><button class="editRejectedBtn">Edit</button></td>
+          `;
+        } else {
+          row.innerHTML = `
+            <td>${grade.Subject}</td>
+            <td>${grade.Score}</td>
+            <td>${grade.Period}</td>
+          `;
+        }
+        tableBody.appendChild(row);
+      });
+
+      if (tableId==='rejectedGradesTable') {
+        document.querySelectorAll('.editRejectedBtn').forEach(btn=>{
+          btn.onclick = openEditRejectedGradeModal;
+        });
+      }
+    })
+    .catch(err => {
+      tableBody.innerHTML = `<tr><td colspan="5" style="color:red;">Error loading grades: ${err.message}</td></tr>`;
+    });
+}
+
+// Submit new grade form
+document.getElementById('submitGradeForm').addEventListener('submit', e => {
+  e.preventDefault();
+  if (!selectedStudentId) { errorMsg.textContent="Please select a student first."; return; }
+  errorMsg.textContent = ""; successMsg.textContent = "";
+
+  const form = e.target;
+  const subject = form.subject.value.trim();
+  const score = form.score.value.trim();
+  const period = form.period.value;
+
+  if (!subject || !score || !period) { errorMsg.textContent="Please fill in all fields."; return; }
+
+  const params = new URLSearchParams({
+    action:'submitGrade', role:'teacher', teacherId,
+    studentId:selectedStudentId, subject, score, period
+  });
+
+  fetch(GAS_URL,{method:'POST', body:params})
+    .then(res=>res.json())
+    .then(data=>{
+      if(!data.success)throw new Error(data.message);
+      successMsg.textContent=data.message||"Grade submitted successfully.";
+      form.reset();
+      loadGrades('getTeacherGrades','approvedGradesTable');
+      loadGrades('viewSubmittedGrades','submittedGradesTable');
+    })
+    .catch(err=>{errorMsg.textContent="Error submitting grade: "+err.message;});
+});
+
+// Edit rejected grade modal
+const editModal = document.getElementById('editRejectedGradeModal');
+const editForm = document.getElementById('editRejectedGradeForm');
+const cancelEditBtn = document.getElementById('cancelEditRejected');
+
+function openEditRejectedGradeModal(e){
+  const tr = e.target.closest('tr');
+  const rowNumber = tr.dataset.rowNumber;
+  if(!rowNumber){ alert("Row number missing, cannot edit grade."); return; }
+  const tds = tr.querySelectorAll('td');
+  editForm.rowNumber.value = rowNumber;
+  editForm.subject.value = tds[0].textContent;
+  editForm.score.value = tds[1].textContent;
+  editForm.period.value = tds[2].textContent;
+  editModal.style.display='block';
+}
+
+cancelEditBtn.onclick=()=>{ editModal.style.display='none'; };
+
+editForm.onsubmit=e=>{
+  e.preventDefault();
+  errorMsg.textContent=""; successMsg.textContent="";
+  const rowNumber=editForm.rowNumber.value;
+  const subject=editForm.subject.value.trim();
+  const score=editForm.score.value.trim();
+  const period=editForm.period.value;
+  if(!rowNumber||!subject||!score||!period){ errorMsg.textContent="Please fill in all fields in edit form."; return; }
+
+  const params=new URLSearchParams({
+    action:'editRejectedGrade', role:'teacher', teacherId,
+    rowNumber, studentId:selectedStudentId, subject, score, period
+  });
+
+  fetch(GAS_URL,{method:'POST', body:params})
+    .then(res=>res.json())
+    .then(data=>{
+      if(!data.success)throw new Error(data.message);
+      successMsg.textContent=data.message||"Rejected grade updated successfully.";
+      editModal.style.display='none';
+      loadGrades('getRejectedGradesWithRow','rejectedGradesTable');
+      loadGrades('viewSubmittedGrades','submittedGradesTable');
+    })
+    .catch(err=>{errorMsg.textContent="Error updating rejected grade: "+err.message;});
+};
+
+window.onload=displayTeacherInfo;
+</script>
+</body>
+</html>
