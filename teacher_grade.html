@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Teacher Master Grade Sheet</title>
 <style>
   body { font-family: Arial, sans-serif; margin: 20px; max-width: 800px; }
@@ -21,7 +21,7 @@
 </head>
 <body>
 
-<h1>Teacher Dashboard</h1>
+<h1>Teacher Master Grade Sheet</h1>
 
 <div id="teacherInfo">
   <p><strong>Name:</strong> <span id="teacherName">Loading...</span></p>
@@ -127,10 +127,10 @@
   const gradesSection = document.getElementById('gradesSection');
   const selectedStudentNameSpan = document.getElementById('selectedStudentName');
 
-  // Display teacher info and start loading students
   function displayTeacherInfo() {
-    teacherId = localStorage.getItem("teacherId");
-    teacherName = localStorage.getItem("teacherName") || "Unknown";
+    const teacherObj = JSON.parse(localStorage.getItem("teacher") || "{}");
+    teacherId = teacherObj.TeacherID;
+    teacherName = teacherObj.Name || "Unknown";
 
     if (!teacherId) {
       errorMsg.textContent = "Teacher ID missing in localStorage. Please login.";
@@ -186,12 +186,10 @@
     gradesSection.style.display = 'block';
 
     loadGrades('getTeacherGrades', 'approvedGradesTable');
-    loadGrades('getRejectedGrades', 'rejectedGradesTable');
+    loadGrades('getRejectedGradesWithRow', 'rejectedGradesTable');
     loadGrades('viewSubmittedGrades', 'submittedGradesTable');
   });
 
-  // Load grades for selected student and teacher
-  // type: API action, tableId: where to show results
   function loadGrades(type, tableId) {
     const tableBody = document.querySelector(`#${tableId} tbody`);
     tableBody.innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
@@ -200,7 +198,6 @@
       .then(res => res.json())
       .then(data => {
         if (!data.success) throw new Error(data.message);
-        // Filter by selectedStudentId
         const grades = data.data.filter(g => g.StudentID === selectedStudentId);
         if (!grades.length) {
           tableBody.innerHTML = `<tr><td colspan="${tableId === 'rejectedGradesTable' ? 5 : 3}">No grades found</td></tr>`;
@@ -209,7 +206,7 @@
         tableBody.innerHTML = "";
         grades.forEach(grade => {
           let row = document.createElement('tr');
-          row.dataset.rowNumber = grade._rowNumber || ''; // Optional if you store row number for editing
+          row.dataset.rowNumber = grade._rowNumber || ''; 
 
           if (tableId === 'rejectedGradesTable') {
             row.innerHTML = `
@@ -240,7 +237,6 @@
       });
   }
 
-  // Submit new grade form
   document.getElementById('submitGradeForm').addEventListener('submit', e => {
     e.preventDefault();
     if (!selectedStudentId) {
@@ -270,24 +266,21 @@
       period
     });
 
-    fetch(GAS_URL, {
-      method: 'POST',
-      body: params
-    })
-    .then(res => res.json())
-    .then(data => {
-      if (!data.success) throw new Error(data.message);
-      successMsg.textContent = data.message || "Grade submitted successfully.";
-      form.reset();
-      loadGrades('getTeacherGrades', 'approvedGradesTable');
-      loadGrades('viewSubmittedGrades', 'submittedGradesTable');
-    })
-    .catch(err => {
-      errorMsg.textContent = "Error submitting grade: " + err.message;
-    });
+    fetch(GAS_URL, { method: 'POST', body: params })
+      .then(res => res.json())
+      .then(data => {
+        if (!data.success) throw new Error(data.message);
+        successMsg.textContent = data.message || "Grade submitted successfully.";
+        form.reset();
+        loadGrades('getTeacherGrades', 'approvedGradesTable');
+        loadGrades('viewSubmittedGrades', 'submittedGradesTable');
+      })
+      .catch(err => {
+        errorMsg.textContent = "Error submitting grade: " + err.message;
+      });
   });
 
-  // Edit rejected grade modal & form
+  // Edit rejected grade modal
   const editModal = document.getElementById('editRejectedGradeModal');
   const editForm = document.getElementById('editRejectedGradeForm');
   const cancelEditBtn = document.getElementById('cancelEditRejected');
@@ -338,25 +331,22 @@
       period
     });
 
-    fetch(GAS_URL, {
-      method: 'POST',
-      body: params
-    })
-    .then(res => res.json())
-    .then(data => {
-      if (!data.success) throw new Error(data.message);
-      successMsg.textContent = data.message || "Rejected grade updated successfully.";
-      editModal.style.display = 'none';
-      loadGrades('getRejectedGrades', 'rejectedGradesTable');
-      loadGrades('viewSubmittedGrades', 'submittedGradesTable');
-    })
-    .catch(err => {
-      errorMsg.textContent = "Error updating rejected grade: " + err.message;
-    });
+    fetch(GAS_URL, { method: 'POST', body: params })
+      .then(res => res.json())
+      .then(data => {
+        if (!data.success) throw new Error(data.message);
+        successMsg.textContent = data.message || "Rejected grade updated successfully.";
+        editModal.style.display = 'none';
+        loadGrades('getRejectedGradesWithRow', 'rejectedGradesTable');
+        loadGrades('viewSubmittedGrades', 'submittedGradesTable');
+      })
+      .catch(err => {
+        errorMsg.textContent = "Error updating rejected grade: " + err.message;
+      });
   };
 
   window.onload = displayTeacherInfo;
 </script>
 
 </body>
-  </html>
+</html>
