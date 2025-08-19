@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Teacher Dashboard</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    background: #ffe4e1; /* subtle pink background */
+  }
+
+  /* Header */
+  .dashboard-header {
+    background-color: #800000;
+    color: #ffc0cb;
+    padding: 25px 20px;
+    text-align: center;
+    position: relative;
+  }
+  .dashboard-header h1 {
+    margin: 0;
+    font-size: 2.2em;
+  }
+  .dashboard-header p {
+    margin: 5px 0 0;
+    font-size: 1.1em;
+  }
+  .dashboard-header span.classes {
+    display: block;
+    margin-top: 5px;
+    font-size: 1em;
+    font-weight: 500;
+  }
+  /* Logout Button */
+  .logout-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background-color: #ffc0cb;
+    color: #800000;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  .logout-btn:hover {
+    background-color: #ffb6c1;
+  }
+
+  /* Cards Container */
+  .dashboard-container {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin: 30px 20px;
+    gap: 20px;
+  }
+  /* Card Style */
+  .dashboard-card {
+    background-color: #ffc0cb;
+    color: #800000;
+    width: 220px;
+    height: 140px;
+    border-radius: 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-weight: 700;
+    font-size: 1.1em;
+    cursor: pointer;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    transition: transform 0.3s, box-shadow 0.3s;
+    position: relative;
+    text-decoration: none;
+  }
+  .dashboard-card i {
+    font-size: 3em;
+    margin-bottom: 10px;
+  }
+  .dashboard-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+  }
+
+  @media (max-width: 500px) {
+    .dashboard-card {
+      width: 80%;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="dashboard-header">
+  <h1 id="teacherName">Teacher Name</h1>
+  <p>Welcome back!</p>
+  <span class="classes" id="teacherClasses">Classes: </span>
+  <button class="logout-btn" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+</div>
+
+<div class="dashboard-container">
+  <a href="teacher_grade.html" class="dashboard-card">
+    <i class="fa-solid fa-square-poll-vertical"></i>
+    Grades Sheet
+  </a>
+  <a href="teacher_assignment.html" class="dashboard-card">
+    <i class="fa-solid fa-chalkboard-user"></i>
+    Classroom Activity
+  </a>
+</div>
+
+<script>
+  const teacher = JSON.parse(localStorage.getItem('teacher'));
+  if (!teacher) {
+    alert('You are not logged in!');
+    window.location.href = 'index.html';
+  } else {
+    document.getElementById('teacherName').innerText = teacher.Name || teacher.TeacherName || 'Teacher';
+    let classesText = teacher.Class || teacher.Classes || '';
+    document.getElementById('teacherClasses').innerText = 'Classes: ' + classesText;
+  }
+
+  function logout() {
+    localStorage.removeItem('teacher');
+    window.location.href = 'index.html';
+  }
+</script>
+
+</body>
+</html>
