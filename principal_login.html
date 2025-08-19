@@ -26,6 +26,7 @@
       box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);  
       width: 100%;  
       max-width: 400px;  
+      position: relative;  
     }  
     h2 {  
       text-align: center;  
@@ -65,6 +66,24 @@
       margin-top: 15px;  
       font-size: 15px;  
     }  
+
+    /* Spinner styling */  
+    .spinner {  
+      border: 4px solid rgba(0,0,0,0.1);  
+      border-top: 4px solid #d81b60;  
+      border-radius: 50%;  
+      width: 24px;  
+      height: 24px;  
+      animation: spin 1s linear infinite;  
+      display: inline-block;  
+      vertical-align: middle;  
+      margin-left: 10px;  
+    }  
+    @keyframes spin {  
+      0% { transform: rotate(0deg); }  
+      100% { transform: rotate(360deg); }  
+    }  
+
     @media (max-width: 480px) {  
       .login-container {  
         padding: 30px 20px;  
@@ -82,7 +101,8 @@
     <label for="pin">PIN</label>  
     <input type="password" id="pin" placeholder="Enter your PIN" />  
   
-    <button onclick="login()">Login</button>  
+    <button id="loginBtn" onclick="login()">Login</button>  
+    <span id="loader" style="display:none;" class="spinner"></span>  
     <p id="result"></p>  
   </div>  
   
@@ -91,17 +111,22 @@
       const name = document.getElementById('principalName').value.trim();  
       const pin = document.getElementById('pin').value.trim();  
       const result = document.getElementById('result');  
+      const loginBtn = document.getElementById('loginBtn');  
+      const loader = document.getElementById('loader');  
   
       if (!name || !pin) {  
         result.style.color = 'red';  
         result.textContent = 'Please enter both Name and PIN.';  
         return;  
       }  
-  
+
+      // Show loader and disable button  
+      loader.style.display = 'inline-block';  
+      loginBtn.disabled = true;  
+
       const url = 'https://script.google.com/macros/s/AKfycbw9P_XOd4k498l0e4WDbFqAF1asb2u4sRj_uX2B-2S1MvyWOeWQZqxy8dr13mPOdNOeuw/exec';  
-  
       const formData = new URLSearchParams();  
-      formData.append('action', 'login');  // required for router  
+      formData.append('action', 'login');  
       formData.append('role', 'principal');  
       formData.append('id', name);  
       formData.append('pin', pin);  
@@ -111,14 +136,13 @@
           method: 'POST',  
           body: formData  
         });  
-  
+
         const data = await response.json();  
-  
+
         if (data.success) {  
           result.style.color = 'green';  
           result.textContent = `Login successful! Welcome, ${data.name}`;  
 
-          // Save credentials locally  
           localStorage.setItem("principalName", name);  
           localStorage.setItem("principalPin", pin);  
 
@@ -133,6 +157,10 @@
         result.style.color = 'red';  
         result.textContent = 'Network error or server issue.';  
         console.error(error);  
+      } finally {  
+        // Hide loader and enable button  
+        loader.style.display = 'none';  
+        loginBtn.disabled = false;  
       }  
     }  
   </script>  
