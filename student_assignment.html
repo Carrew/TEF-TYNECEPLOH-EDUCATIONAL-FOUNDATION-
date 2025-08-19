@@ -5,6 +5,7 @@
 <title>Student Assignments</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
+/* --- Shared Style (same as Teacher) --- */
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background: linear-gradient(135deg, #ffc0cb, #800000);
@@ -30,6 +31,7 @@ h2 {
   display: block;
   text-align: center;
   color: #800000;
+  font-size: 18px;
 }
 input[type="text"] {
   width: 100%;
@@ -38,6 +40,9 @@ input[type="text"] {
   border-radius: 8px;
   border: 1px solid #800000;
   font-size: 16px;
+}
+.table-container {
+  overflow-x: auto;
 }
 table {
   width: 100%;
@@ -51,6 +56,11 @@ table th, table td {
 }
 table th {
   background-color: #f2f2f2;
+  color: #800000;
+}
+#assignmentTable tbody tr:hover {
+  background-color: #fff0f5;
+  box-shadow: inset 0 0 5px rgba(0,0,0,0.1);
 }
 .view-btn, .download-btn {
   background-color: #800000;
@@ -61,6 +71,7 @@ table th {
   cursor: pointer;
   font-weight: bold;
   margin-right: 5px;
+  transition: background 0.3s;
 }
 .view-btn:hover, .download-btn:hover {
   background-color: #b22222;
@@ -73,7 +84,7 @@ table th {
   display: none;
 }
 
-/* Modal */
+/* --- Modal Style (matching teacher modal) --- */
 .modal {
   display: none;
   position: fixed;
@@ -92,8 +103,9 @@ table th {
   padding: 20px;
   border-radius: 12px;
   max-width: 800px;
-  width: 90%; /* make modal mobile-friendly */
+  width: 90%;
   position: relative;
+  animation: fadeIn 0.3s ease-in-out;
 }
 .close {
   color: #800000;
@@ -105,36 +117,42 @@ table th {
 .close:hover {
   color: #b22222;
 }
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.9);}
+  to { opacity: 1; transform: scale(1);}
+}
 </style>
 </head>
 <body>
 <div class="container">
-<h2>Student Assignments Dashboard</h2>
-<span id="studentName"></span>
+  <h2>📘 Student Assignments Dashboard</h2>
+  <span id="studentName"></span>
 
-<input type="text" id="searchInput" placeholder="Search assignments by title, description, due date, or date given..." onkeyup="filterTable()">
+  <input type="text" id="searchInput" placeholder="🔍 Search assignments..." onkeyup="filterTable()">
 
-<table id="assignmentTable">
-  <thead>
-    <tr>
-      <th>Title</th>
-      <th>Description</th>
-      <th>Due Date</th>
-      <th>Date Given</th>
-      <th>Actions</th>
-    </tr>
-  </thead>
-  <tbody></tbody>
-</table>
-<div id="notification"></div>
+  <div class="table-container">
+    <table id="assignmentTable">
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Description</th>
+          <th>Due Date</th>
+          <th>Date Given</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+  <div id="notification"></div>
 </div>
 
-<!-- Modal for PDF preview -->
+<!-- Modal for Assignment Details -->
 <div id="pdfModal" class="modal">
   <div class="modal-content">
     <span class="close" onclick="closeModal()">&times;</span>
     <div id="pdfContent"></div>
-    <button class="download-btn" onclick="downloadPDF()">Download PDF</button>
+    <button class="download-btn" onclick="downloadPDF()">⬇ Download PDF</button>
   </div>
 </div>
 
@@ -150,7 +168,7 @@ if (!student) {
 const studentId = student.StudentID || '';
 const studentName = student.name || '';
 const studentClass = student.class || '';
-document.getElementById('studentName').textContent = `Welcome, ${studentName}`;
+document.getElementById('studentName').textContent = `Welcome, ${studentName} (${studentClass})`;
 
 let assignments = [];
 let selectedAssignment = null;
@@ -174,6 +192,8 @@ async function fetchAssignments() {
     const data = await response.json();
     if (data.success) {
       assignments = data.assignments || [];
+      // 🔥 sort by most recent (Timestamp DESC)
+      assignments.sort((a, b) => new Date(b.Timestamp) - new Date(a.Timestamp));
       renderTable(assignments);
     } else {
       alert(data.message || 'Failed to fetch assignments');
@@ -187,6 +207,10 @@ async function fetchAssignments() {
 function renderTable(list) {
   const tbody = document.querySelector('#assignmentTable tbody');
   tbody.innerHTML = '';
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">No assignments found.</td></tr>`;
+    return;
+  }
   list.forEach(a => {
     const dueDate = new Date(a.DueDate).toLocaleString();
     const dateGiven = new Date(a.Timestamp).toLocaleString();
@@ -197,7 +221,7 @@ function renderTable(list) {
       <td>${dueDate}</td>
       <td>${dateGiven}</td>
       <td>
-        <button class="view-btn" onclick='viewPDF(${JSON.stringify(a)})'>View</button>
+        <button class="view-btn" onclick='viewPDF(${JSON.stringify(a)})'>👁 View</button>
       </td>
     `;
     tbody.appendChild(tr);
@@ -215,7 +239,7 @@ function filterTable() {
   renderTable(filtered);
 }
 
-// PDF Modal
+// Modal
 function viewPDF(assignment) {
   selectedAssignment = assignment;
   const pdfContent = document.getElementById('pdfContent');
@@ -236,7 +260,8 @@ function downloadPDF() {
   if (!selectedAssignment) return;
   const notif = document.getElementById('notification');
   notif.style.display = 'block';
-  notif.textContent = 'Downloading PDF...';
+  notif.style.color = "blue";
+  notif.textContent = '📥 Downloading PDF...';
 
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
@@ -247,11 +272,14 @@ function downloadPDF() {
   doc.text(`Due Date: ${new Date(selectedAssignment.DueDate).toLocaleString()}`, 10, 40);
   doc.text(`Date Given: ${new Date(selectedAssignment.Timestamp).toLocaleString()}`, 10, 50);
 
-  doc.save(`${selectedAssignment.Title}.pdf`);
-  notif.textContent = 'Download Complete!';
   setTimeout(() => {
-    notif.style.display = 'none';
-  }, 2000);
+    doc.save(`${selectedAssignment.Title}.pdf`);
+    notif.style.color = "green";
+    notif.textContent = '✅ Download Complete!';
+    setTimeout(() => {
+      notif.style.display = 'none';
+    }, 2000);
+  }, 1200);
 }
 
 // Close modal when clicking outside
