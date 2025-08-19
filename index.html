@@ -14,7 +14,7 @@
       line-height: 1.6;
     }
 
-    /* Header - Title and Location */
+    /* Header - Title and Location - Refined */
     header {
       background: linear-gradient(135deg, #d63384 0%, #7a1f52 100%);
       color: #fff;
@@ -22,20 +22,33 @@
       text-align: center;
       box-shadow: 0 5px 15px rgba(182, 27, 102, 0.5);
       font-weight: 700;
-      letter-spacing: 1.3px;
+      letter-spacing: 1px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
+
     header h1 {
       font-size: 2.8rem;
       margin-bottom: 0.3rem;
       text-transform: uppercase;
-      text-shadow: 0.5px 0.5px 1.5px rgba(0,0,0,0.25);
+      text-shadow: 0 0 2px rgba(0,0,0,0.3);
+      letter-spacing: 1.5px;
     }
+
     header p {
       font-size: 1.25rem;
       font-weight: 500;
-      letter-spacing: 0.07em;
-      text-shadow: 0.5px 0.5px 1.5px rgba(0,0,0,0.2);
-      margin-top: 0;
+      letter-spacing: 0.05em;
+      text-shadow: 0 0 1.5px rgba(0,0,0,0.25);
+      margin-top: 0.2rem;
+      line-height: 1.4;
+    }
+
+    header p em {
+      font-style: normal;
+      font-weight: 500;
+      display: block;
+      margin-top: 0.4rem;
+      color: #ffe4f1;
     }
 
     /* Navigation Buttons */
@@ -250,10 +263,11 @@
     /* Responsive */
     @media(max-width: 600px) {
       header h1 {
-        font-size: 2rem;
+        font-size: 2.2rem; /* improved mobile readability */
       }
       header p {
         font-size: 1rem;
+        line-height: 1.35;
       }
       nav button {
         margin: 0.4rem 0.5rem;
