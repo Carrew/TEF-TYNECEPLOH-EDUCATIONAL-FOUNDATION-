@@ -2,216 +2,196 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Teacher Master Grade Sheet</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Teacher Master Grade Sheet</title>
 <style>
-  body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #ffc0cb, #800000);
-    margin: 0;
-    padding: 20px;
-  }
-
-  .container {
-    background: white;
-    border-radius: 12px;
-    padding: 25px;
-    max-width: 900px;
-    margin: 0 auto;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-  }
-
-  h1, h2 {
-    color: #800000;
-    text-align: center;
-    margin-bottom: 20px;
-  }
-
-  .teacher-info {
-    text-align: center;
-    font-weight: 700;
-    margin-bottom: 20px;
-    font-size: 16px;
-    color: #800000;
-  }
-
-  label {
-    display: block;
-    font-weight: 600;
-    margin-top: 15px;
-    color: #800000;
-  }
-
-  select {
-    width: 100%;
-    padding: 10px;
-    border-radius: 8px;
-    margin-top: 6px;
-    font-size: 16px;
-  }
-
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 25px;
-  }
-
-  th, td {
-    border: 1px solid #ccc;
-    padding: 10px;
-    text-align: center;
-  }
-
-  th {
-    background: #f8d7da;
-    color: #800000;
-  }
-
-  tr:nth-child(even) {
-    background: #f9f9f9;
-  }
-
-  .btn {
-    background-color: #800000;
-    color: white;
-    padding: 12px 20px;
-    border: none;
-    border-radius: 8px;
-    font-weight: 700;
-    cursor: pointer;
-    margin: 10px 5px 0 0;
-    transition: background-color 0.3s;
-  }
-
-  .btn:hover {
-    background-color: #b22222;
-  }
-
-  #loadingMsg {
-    text-align: center;
-    font-weight: 600;
-    margin: 10px 0;
-    color: #800000;
-  }
+  body { font-family: Arial, sans-serif; margin: 20px; max-width: 900px; }
+  h1 { margin-bottom: 0; }
+  #teacherInfo { margin-bottom: 20px; font-weight: bold; }
+  label { display: block; margin-top: 10px; font-weight: bold; }
+  select, input, button { padding: 6px; margin-top: 5px; font-size: 1rem; width: 100%; max-width: 400px; }
+  button { margin-top: 15px; cursor: pointer; }
+  #errorMsg, #successMsg { margin-top: 10px; }
+  #errorMsg { color: red; }
+  #successMsg { color: green; }
+  table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+  th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+  th { background: #eee; }
+  .grade-low { color: red; font-weight: bold; }
+  .grade-high { color: blue; font-weight: bold; }
+  #printBtn { margin-top: 10px; background: #800000; color: white; border: none; padding: 10px; border-radius: 5px; cursor:pointer; }
 </style>
 </head>
 <body>
-<div class="container">
-  <h1>Teacher Master Grade Sheet</h1>
-  <div class="teacher-info" id="teacherInfo">Loading teacher info...</div>
 
+<h1>Teacher Master Grade Sheet</h1>
+
+<div id="teacherInfo">Loading teacher info...</div>
+
+<div>
   <label for="classSelect">Select Class:</label>
-  <select id="classSelect"><option>Loading classes...</option></select>
+  <select id="classSelect">
+    <option value="">Loading classes...</option>
+  </select>
 
   <label for="studentSelect">Select Student:</label>
-  <select id="studentSelect" disabled><option>Select a class first</option></select>
+  <select id="studentSelect">
+    <option value="">Select class first</option>
+  </select>
 
-  <p id="loadingMsg"></p>
+  <div id="errorMsg"></div>
+  <div id="successMsg"></div>
+</div>
 
-  <h2>Approved Grades</h2>
+<div id="gradesSection" style="display:none;">
+  <h2>Approved Grades for <span id="selectedStudentName"></span></h2>
+  <button id="printBtn" onclick="printApproved()">Print Approved Grades</button>
   <table id="approvedGradesTable">
-    <thead>
-      <tr><th>Subject</th><th>Score</th><th>Period</th></tr>
-    </thead>
+    <thead><tr><th>Subject</th><th>Score</th><th>Period</th></tr></thead>
     <tbody></tbody>
   </table>
 
-  <h2>Rejected Grades</h2>
+  <h3>Rejected Grades</h3>
   <table id="rejectedGradesTable">
-    <thead>
-      <tr><th>Subject</th><th>Score</th><th>Period</th><th>Reason</th><th>Actions</th></tr>
-    </thead>
+    <thead><tr><th>Subject</th><th>Score</th><th>Period</th><th>Reject Reason</th><th>Actions</th></tr></thead>
     <tbody></tbody>
   </table>
 
-  <h2>Submitted Grades</h2>
+  <h3>Submitted Grades</h3>
   <table id="submittedGradesTable">
-    <thead>
-      <tr><th>Subject</th><th>Score</th><th>Period</th></tr>
-    </thead>
+    <thead><tr><th>Subject</th><th>Score</th><th>Period</th></tr></thead>
     <tbody></tbody>
   </table>
+
+  <h3>Submit New Grade</h3>
+  <form id="submitGradeForm">
+    <label>Subject:<input type="text" name="subject" required /></label>
+    <label>Score:<input type="number" name="score" min="0" max="100" required /></label>
+    <label>Period:
+      <select name="period" required>
+        <option value="">Select period</option>
+        <option value="1st Period">1st Period</option>
+        <option value="2nd Period">2nd Period</option>
+        <option value="3rd Period">3rd Period</option>
+        <option value="Semester Exam">Semester Exam</option>
+        <option value="4th Period">4th Period</option>
+        <option value="5th Period">5th Period</option>
+        <option value="6th Period">6th Period</option>
+        <option value="Final Exam">Final Exam</option>
+      </select>
+    </label>
+    <button type="submit">Submit Grade</button>
+  </form>
+</div>
+
+<div id="editRejectedGradeModal" style="display:none; position:fixed; top:10%; left:50%; transform:translateX(-50%); background:#fff; border:1px solid #ccc; padding:20px; max-width:400px; z-index:100;">
+  <h3>Edit & Resubmit Rejected Grade</h3>
+  <form id="editRejectedGradeForm">
+    <label>Subject:<input type="text" name="subject" required /></label>
+    <label>Score:<input type="number" name="score" min="0" max="100" required /></label>
+    <label>Period:
+      <select name="period" required>
+        <option value="">Select period</option>
+        <option value="1st Period">1st Period</option>
+        <option value="2nd Period">2nd Period</option>
+        <option value="3rd Period">3rd Period</option>
+        <option value="Semester Exam">Semester Exam</option>
+        <option value="4th Period">4th Period</option>
+        <option value="5th Period">5th Period</option>
+        <option value="6th Period">6th Period</option>
+        <option value="Final Exam">Final Exam</option>
+      </select>
+    </label>
+    <button type="submit">Resubmit</button>
+    <button type="button" id="cancelEditRejected">Cancel</button>
+  </form>
 </div>
 
 <script>
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbw9P_XOd4k498l0e4WDbFqAF1asb2u4sRj_uX2B-2S1MvyWOeWQZqxy8dr13mPOdNOeuw/exec';
+const GAS_URL = "https://script.google.com/macros/s/AKfycbw9P_XOd4k498l0e4WDbFqAF1asb2u4sRj_uX2B-2S1MvyWOeWQZqxy8dr13mPOdNOeuw/exec";
 
-// Load teacher info
-const teacher = JSON.parse(localStorage.getItem('teacher') || '{}');
-const teacherInfo = document.getElementById('teacherInfo');
-if (!teacher.TeacherID) {
-  alert('Teacher info not found. Please login.');
-  window.location.href = 'teacher_login.html';
-} else {
-  teacherInfo.textContent = `Welcome, ${teacher.name || teacher.Name || 'Teacher'} | Classes: ${teacher.class || 'N/A'}`;
-}
+let teacherId = null;
+let teacherName = null;
+let selectedClass = null;
+let selectedStudentId = null;
+let selectedStudentName = null;
 
-// Populate class dropdown
 const classSelect = document.getElementById('classSelect');
 const studentSelect = document.getElementById('studentSelect');
-const loadingMsg = document.getElementById('loadingMsg');
-let selectedStudentId = null;
+const errorMsg = document.getElementById('errorMsg');
+const successMsg = document.getElementById('successMsg');
+const gradesSection = document.getElementById('gradesSection');
+const selectedStudentNameSpan = document.getElementById('selectedStudentName');
 
-// Classes from teacher info
-const classes = (teacher.class || '').split(',').map(c => c.trim()).filter(Boolean);
-classSelect.innerHTML = '<option value="">-- Select Class --</option>';
-classes.forEach(c => {
-  const opt = document.createElement('option');
-  opt.value = c;
-  opt.textContent = c;
-  classSelect.appendChild(opt);
-});
+function displayTeacherInfo() {
+  const teacherData = JSON.parse(localStorage.getItem("teacher") || "{}");
+  teacherId = teacherData.TeacherID;
+  teacherName = teacherData.name || teacherData.Name || "Unknown";
 
-// When class changes, load students for that class
-classSelect.addEventListener('change', () => {
-  const className = classSelect.value;
-  if (!className) {
-    studentSelect.innerHTML = '<option>Select a class first</option>';
-    studentSelect.disabled = true;
+  if (!teacherId) {
+    errorMsg.textContent = "Teacher ID missing. Please login.";
     return;
   }
 
-  studentSelect.disabled = false;
-  studentSelect.innerHTML = '<option>Loading students...</option>';
-  loadingMsg.textContent = '';
+  document.getElementById("teacherInfo").textContent = `Teacher: ${teacherName}`;
+  populateClasses(teacherData.class || "");
+}
 
-  fetch(`${GAS_URL}?action=getStudentList&role=teacher&teacherId=${encodeURIComponent(teacher.TeacherID)}`)
+function populateClasses(classesStr) {
+  const classes = classesStr.split(',').map(c => c.trim()).filter(Boolean);
+  classSelect.innerHTML = '<option value="">-- Select Class --</option>';
+  classes.forEach(c => {
+    const option = document.createElement('option');
+    option.value = c;
+    option.text = c;
+    classSelect.appendChild(option);
+  });
+}
+
+classSelect.addEventListener('change', () => {
+  selectedClass = classSelect.value;
+  loadStudentsByClass(selectedClass);
+});
+
+function loadStudentsByClass(className) {
+  studentSelect.innerHTML = '<option>Loading students...</option>';
+  if (!className) { studentSelect.innerHTML = '<option>Select class first</option>'; return; }
+
+  fetch(`${GAS_URL}?action=getStudentList&role=teacher&teacherId=${encodeURIComponent(teacherId)}&class=${encodeURIComponent(className)}`)
     .then(res => res.json())
     .then(data => {
       if (!data.success) throw new Error(data.message);
-      const students = data.data.filter(s => s.Class === className);
-      if (!students.length) {
-        studentSelect.innerHTML = '<option>No students in this class</option>';
-        return;
-      }
+      const students = data.data || [];
       studentSelect.innerHTML = '<option value="">-- Select Student --</option>';
       students.forEach(s => {
         const opt = document.createElement('option');
         opt.value = s.StudentID || s.ID;
-        opt.textContent = s.Name || s.FullName || 'Unnamed Student';
+        opt.textContent = s.Name || s.FullName;
         studentSelect.appendChild(opt);
       });
     })
     .catch(err => {
       studentSelect.innerHTML = '<option>Error loading students</option>';
-      console.error(err);
+      errorMsg.textContent = "Error: " + err.message;
     });
-});
+}
 
-// When student changes, load grades
 studentSelect.addEventListener('change', () => {
   selectedStudentId = studentSelect.value;
-  if (!selectedStudentId) return;
-  loadGrades('getTeacherGrades', 'approvedGradesTable');
-  loadGrades('getRejectedGradesWithRow', 'rejectedGradesTable');
-  loadGrades('viewSubmittedGrades', 'submittedGradesTable');
+  selectedStudentName = studentSelect.options[studentSelect.selectedIndex]?.text || '';
+  selectedStudentNameSpan.textContent = selectedStudentName;
+  if (!selectedStudentId) { gradesSection.style.display = 'none'; return; }
+  gradesSection.style.display = 'block';
+  loadGrades('getTeacherGrades', 'approvedGradesTable', true);
+  loadGrades('getRejectedGradesWithRow', 'rejectedGradesTable', false);
+  loadGrades('viewSubmittedGrades', 'submittedGradesTable', false);
 });
 
-function loadGrades(action, tableId) {
+function loadGrades(type, tableId, colorCode=false) {
   const tableBody = document.querySelector(`#${tableId} tbody`);
   tableBody.innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
 
-  fetch(`${GAS_URL}?action=${action}&role=teacher&teacherId=${encodeURIComponent(teacher.TeacherID)}`)
+  fetch(`${GAS_URL}?action=${type}&role=teacher&teacherId=${encodeURIComponent(teacherId)}`)
     .then(res => res.json())
     .then(data => {
       if (!data.success) throw new Error(data.message);
@@ -220,27 +200,94 @@ function loadGrades(action, tableId) {
         tableBody.innerHTML = `<tr><td colspan="${tableId==='rejectedGradesTable'?5:3}">No grades found</td></tr>`;
         return;
       }
-      tableBody.innerHTML = '';
-      grades.forEach(g => {
-        let row = document.createElement('tr');
-        if (tableId === 'rejectedGradesTable') {
-          row.innerHTML = `
-            <td>${g.Subject}</td>
-            <td>${g.Score}</td>
-            <td>${g.Period}</td>
-            <td>${g.RejectReason || ''}</td>
-            <td><button class="btn" style="padding:5px 10px;" onclick="alert('Edit row ${g.row}')">Edit</button></td>
-          `;
+      tableBody.innerHTML = "";
+      grades.forEach(grade => {
+        const tr = document.createElement('tr');
+        if (tableId==='rejectedGradesTable') {
+          tr.innerHTML = `<td>${grade.Subject}</td><td>${grade.Score}</td><td>${grade.Period}</td><td>${grade.RejectReason||''}</td><td><button class="editRejectedBtn">Edit</button></td>`;
         } else {
-          row.innerHTML = `<td>${g.Subject}</td><td>${g.Score}</td><td>${g.Period}</td>`;
+          const scoreClass = colorCode ? (parseFloat(grade.Score)<69.5?'grade-low':'grade-high') : '';
+          tr.innerHTML = `<td>${grade.Subject}</td><td class="${scoreClass}">${grade.Score}</td><td>${grade.Period}</td>`;
         }
-        tableBody.appendChild(row);
+        tableBody.appendChild(tr);
       });
+
+      if (tableId==='rejectedGradesTable') {
+        document.querySelectorAll('.editRejectedBtn').forEach(btn => btn.onclick = openEditRejectedGradeModal);
+      }
     })
-    .catch(err => {
-      tableBody.innerHTML = `<tr><td colspan="5" style="color:red;">Error: ${err.message}</td></tr>`;
-    });
+    .catch(err => { tableBody.innerHTML = `<tr><td colspan="5" style="color:red;">Error loading grades: ${err.message}</td></tr>`; });
 }
+
+function printApproved() {
+  if (!selectedStudentId) { alert("Select student first."); return; }
+  const table = document.getElementById('approvedGradesTable');
+  const studentInfo = `Student: ${selectedStudentName} | Class: ${selectedClass || 'N/A'}`;
+  const newWin = window.open('', '', 'width=900,height=600');
+  newWin.document.write('<html><head><title>Print Approved Grades</title></head><body>');
+  newWin.document.write(`<h2>Approved Grades</h2><p style="font-weight:bold;">${studentInfo}</p>`);
+  newWin.document.write(table.outerHTML);
+  newWin.document.write('</body></html>');
+  newWin.document.close();
+  newWin.print();
+}
+
+// Rejected grade modal
+const editModal = document.getElementById('editRejectedGradeModal');
+const editForm = document.getElementById('editRejectedGradeForm');
+const cancelEditBtn = document.getElementById('cancelEditRejected');
+
+function openEditRejectedGradeModal(e) {
+  const tr = e.target.closest('tr');
+  const tds = tr.querySelectorAll('td');
+  editForm.subject.value = tds[0].textContent;
+  editForm.score.value = tds[1].textContent;
+  editForm.period.value = tds[2].textContent;
+  editModal.style.display = 'block';
+}
+
+cancelEditBtn.onclick = () => editModal.style.display = 'none';
+
+editForm.onsubmit = e => {
+  e.preventDefault();
+  errorMsg.textContent = ""; successMsg.textContent = "";
+  const subject = editForm.subject.value.trim();
+  const score = editForm.score.value.trim();
+  const period = editForm.period.value;
+  if (!subject||!score||!period) { errorMsg.textContent="Fill all fields"; return; }
+
+  const params = new URLSearchParams({action:'editRejectedGrade', role:'teacher', teacherId, studentId:selectedStudentId, subject, score, period});
+  fetch(GAS_URL,{method:'POST',body:params})
+    .then(res=>res.json())
+    .then(data=>{
+      if(!data.success) throw new Error(data.message);
+      successMsg.textContent=data.message||"Resubmitted successfully";
+      editModal.style.display='none';
+      loadGrades('getRejectedGradesWithRow','rejectedGradesTable',false);
+      loadGrades('viewSubmittedGrades','submittedGradesTable',false);
+    }).catch(err=>{errorMsg.textContent="Error: "+err.message;});
+};
+
+document.getElementById('submitGradeForm').addEventListener('submit', e=>{
+  e.preventDefault();
+  if(!selectedStudentId){errorMsg.textContent="Select student first";return;}
+  errorMsg.textContent=""; successMsg.textContent="";
+  const form=e.target, subject=form.subject.value.trim(), score=form.score.value.trim(), period=form.period.value;
+  if(!subject||!score||!period){errorMsg.textContent="Fill all fields";return;}
+  const params=new URLSearchParams({action:'submitGrade', role:'teacher', teacherId, studentId:selectedStudentId, subject, score, period});
+  fetch(GAS_URL,{method:'POST', body:params})
+    .then(res=>res.json())
+    .then(data=>{
+      if(!data.success) throw new Error(data.message);
+      successMsg.textContent=data.message||"Submitted successfully";
+      form.reset();
+      loadGrades('getTeacherGrades','approvedGradesTable',true);
+      loadGrades('viewSubmittedGrades','submittedGradesTable',false);
+    }).catch(err=>{errorMsg.textContent="Error: "+err.message;});
+});
+
+window.onload = displayTeacherInfo;
 </script>
+
 </body>
 </html>
