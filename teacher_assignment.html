@@ -170,39 +170,77 @@ function formatDateTime(dt) {
   return date.toLocaleString([], {year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
 }
 
-// Modal logic
-let currentTextarea = null;
-function openModal(textarea) {
-  currentTextarea = textarea;
+// ----------------------
+// Modal logic with API update
+// ----------------------
+let currentAssignmentId = null;
+function openModal(textarea, assignmentId) {
+  currentAssignmentId = assignmentId;
   document.getElementById('modalTextarea').value = textarea.value;
   document.getElementById('descriptionModal').style.display = 'flex';
 }
+
 function closeModal() {
   document.getElementById('descriptionModal').style.display = 'none';
-  currentTextarea = null;
+  currentAssignmentId = null;
 }
+
 document.getElementById('saveModalBtn').addEventListener('click', () => {
-  if (currentTextarea) {
-    currentTextarea.value = document.getElementById('modalTextarea').value;
+  const newDescription = document.getElementById('modalTextarea').value.trim();
+  if(!newDescription || !currentAssignmentId) {
+    alert("Description cannot be empty!");
+    return;
   }
-  closeModal();
+
+  const saveBtn = document.getElementById('saveModalBtn');
+  saveBtn.disabled = true;
+  saveBtn.textContent = 'Saving...';
+
+  const formData = new URLSearchParams({
+    action: 'updateAssignment',
+    role: 'teacher',
+    teacherId: teacher.TeacherID,
+    assignmentId: currentAssignmentId,
+    description: newDescription
+  });
+
+  fetch(API_URL, { method: 'POST', body: formData })
+    .then(res => res.json())
+    .then(data => {
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save';
+      if(data.success) {
+        closeModal();
+        loadAssignments(); // Refresh table to show updated description
+      } else {
+        alert(data.message || 'Failed to update assignment.');
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save';
+      alert('Network error or server issue.');
+    });
 });
 
-// Table rendering with sorting by newest first
+// ----------------------
+// Load assignments table
+// ----------------------
 function loadAssignments() {
   const params = new URLSearchParams({
     action: 'getTeacherAssignments',
     role: 'teacher',
     teacherId: teacher.TeacherID
   });
+
   fetch(`${API_URL}?${params}`)
     .then(res => res.json())
     .then(data => {
       const tbody = document.querySelector('#assignmentTable tbody');
       tbody.innerHTML = '';
-      if (data.success && data.assignments.length) {
+      if(data.success && data.assignments.length) {
         data.assignments.sort((a, b) => new Date(b.Timestamp) - new Date(a.Timestamp));
-
         data.assignments.forEach(a => {
           const tr = document.createElement('tr');
           tr.innerHTML = `
@@ -214,12 +252,10 @@ function loadAssignments() {
             <td>${formatDateTime(a.DueDate)}</td>
           `;
           tr.querySelector('textarea').addEventListener('click', function() {
-            openModal(this);
+            openModal(this, a.AssignmentID); // Pass assignment ID for saving
           });
           tbody.appendChild(tr);
         });
-        // Auto scroll to top (newest assignment)
-        tbody.parentElement.scrollTop = 0;
       } else {
         tbody.innerHTML = '<tr><td colspan="6">No assignments/notes found.</td></tr>';
       }
@@ -227,11 +263,9 @@ function loadAssignments() {
     .catch(err => console.error(err));
 }
 
-document.getElementById('assignmentDescription').addEventListener('click', function() {
-  openModal(this);
-});
-
-// Add assignment/note
+// ----------------------
+// Add assignment
+// ----------------------
 function addAssignment() {
   const addBtn = document.getElementById('addBtn');
   addBtn.disabled = true;
@@ -272,7 +306,7 @@ function addAssignment() {
         document.getElementById('assignmentTitle').value = '';
         document.getElementById('assignmentDescription').value = '';
         document.getElementById('assignmentDueDate').value = '';
-        loadAssignments(); // auto-refresh table after adding
+        loadAssignments(); // refresh table
       } else {
         document.getElementById('successMsg').style.color = 'red';
         document.getElementById('successMsg').innerText = data.message || 'Failed to add assignment/note.';
@@ -287,7 +321,9 @@ function addAssignment() {
     });
 }
 
+// ----------------------
 // Search assignments/notes
+// ----------------------
 function searchAssignments() {
   const filter = document.getElementById('searchInput').value.toLowerCase();
   document.querySelectorAll('#assignmentTable tbody tr').forEach(row => {
