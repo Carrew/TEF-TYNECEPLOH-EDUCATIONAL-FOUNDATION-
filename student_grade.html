@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Student Dashboard</title>
+  <title>Grade Sheet</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
@@ -95,7 +95,6 @@
       font-weight: bold;
     }
 
-    /* Print styles */
     @media print {
       #buttonGroup, #filterContainer {
         display: none;
@@ -110,7 +109,6 @@
       }
     }
 
-    /* Hidden normally */
     #printHeader {
       display: none;
     }
@@ -127,7 +125,6 @@
     </div>
   </h2>
 
-  <!-- Print Header (only visible when printing) -->
   <div id="printHeader">
     <h2 id="schoolName">Tyneceploh Educational Foundation</h2>
     <p id="printStudentName"></p>
@@ -156,19 +153,22 @@
 
   <script>
     const API_URL = 'https://script.google.com/macros/s/AKfycbw9P_XOd4k498l0e4WDbFqAF1asb2u4sRj_uX2B-2S1MvyWOeWQZqxy8dr13mPOdNOeuw/exec';
-    const studentId = localStorage.getItem("studentId");
-    const studentName = localStorage.getItem("studentName");
-
-    if (!studentId) {
+    
+    // Parse student info from login page
+    const student = JSON.parse(localStorage.getItem('student'));
+    if (!student || !student.StudentID) {
       alert("Access Denied. Please login.");
-      window.location.href = "login.html";
+      window.location.href = "index.html";
     }
 
+    const studentId = student.StudentID;
+    const studentName = student.name || "Student";
+
     // Display student's name
-    document.getElementById("studentName").textContent = `Welcome, ${studentName || "Student"}`;
+    document.getElementById("studentName").textContent = `Welcome, ${studentName}`;
 
     // Update print header
-    document.getElementById("printStudentName").textContent = `Student: ${studentName || "Student"}`;
+    document.getElementById("printStudentName").textContent = `Student: ${studentName}`;
     document.getElementById("printDate").textContent = `Date: ${new Date().toLocaleDateString()}`;
 
     let gradesData = [];
@@ -222,7 +222,8 @@
 
         const score = document.createElement("td");
         score.textContent = grade.Score;
-        score.className = grade.Score < 70 ? "red" : "blue";
+        // Updated color logic: 69.5 and above = blue
+        score.className = grade.Score >= 69.5 ? "blue" : "red";
 
         const periodCell = document.createElement("td");
         periodCell.textContent = grade.Period;
@@ -242,7 +243,7 @@
 
     function logout() {
       localStorage.clear();
-      window.location.href = "index.html"; // updated logout redirect
+      window.location.href = "index.html";
     }
 
     function printResults() {
@@ -253,7 +254,6 @@
       window.location.href = "student_assignment.html";
     }
 
-    // Initial load
     fetchGrades();
   </script>
 
