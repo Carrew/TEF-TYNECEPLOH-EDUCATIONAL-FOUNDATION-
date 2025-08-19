@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Teacher Dashboard</title>
 <style>
-  body { 
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-    margin: 20px; 
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 20px;
     background: #ffe6f0;
     color: #4d1a00;
   }
@@ -23,22 +23,29 @@
   }
   label { font-weight: 600; display: block; margin: 10px 0 4px; }
   input, textarea, select {
-    width: 100%; padding: 8px; border: 1.5px solid #804000; border-radius: 8px; 
+    width: 100%; padding: 8px; border: 1.5px solid #804000; border-radius: 8px;
     font-size: 15px; outline-color: #ffb6c1; box-sizing: border-box;
   }
   textarea { resize: vertical; min-height: 60px; max-height: 150px; }
-  button { 
-    background: #804000; color: white; border: none; padding: 10px 16px; border-radius: 8px; 
+  button {
+    background: #804000; color: white; border: none; padding: 10px 16px; border-radius: 8px;
     cursor: pointer; font-weight: 700; margin-top: 10px;
     transition: background 0.3s ease;
   }
   button:hover { background: #a0522d; }
   button:disabled { background: #d9a77e; cursor: not-allowed; }
   #successMsg { margin-top: 10px; font-weight: 600; color: green; }
-  table { width: 100%; border-collapse: collapse; margin-top: 20px; background: #fff0f5; border-radius: 8px; overflow: hidden; }
-  th, td { padding: 10px; border: 1px solid #804000; text-align: left; vertical-align: top; }
+  table {
+    width: 100%; border-collapse: collapse; margin-top: 20px; background: #fff0f5; border-radius: 8px; overflow: hidden;
+  }
+  th, td {
+    padding: 10px; border: 1px solid #804000; text-align: left; vertical-align: top;
+  }
   th { background: #ffe6f0; }
-  td textarea { width: 100%; border: none; resize: none; background: transparent; font-family: inherit; cursor: pointer; transition: all 0.3s ease; overflow: hidden; height: 50px; }
+  td textarea {
+    width: 100%; border: none; resize: none; background: transparent; font-family: inherit; cursor: pointer;
+    transition: all 0.3s ease; overflow: hidden; height: 50px;
+  }
   td textarea.expanded { height: auto; white-space: pre-wrap; }
   .search-container { margin-bottom: 10px; }
   .search-container input { width: 100%; padding: 8px; font-size: 14px; }
@@ -46,39 +53,39 @@
   /* Modal Styles */
   #descriptionModal {
     display: none;
-    position: fixed; 
-    top: 0; left: 0; 
-    width: 100%; height: 100%; 
-    background: rgba(0,0,0,0.6); 
-    justify-content: center; 
-    align-items: center; 
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6);
+    justify-content: center;
+    align-items: center;
     z-index: 999;
   }
   #descriptionModal .modal-content {
-    background: #fff0f5; 
-    padding: 20px; 
-    border-radius: 12px; 
-    width: 90%; 
-    max-width: 600px; 
-    max-height: 80%; 
-    overflow-y: auto; 
+    background: #fff0f5;
+    padding: 20px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 80%;
+    overflow-y: auto;
     position: relative;
     box-shadow: 0 8px 20px rgba(0,0,0,0.3);
   }
   #descriptionModal button.close-btn {
-    position: absolute; top: 10px; right: 10px; 
-    background:#804000; color:white; border:none; 
+    position: absolute; top: 10px; right: 10px;
+    background:#804000; color:white; border:none;
     padding:5px 10px; border-radius:5px; cursor:pointer;
     font-weight: 700;
   }
   #descriptionModal textarea {
-    width: 100%; height: 300px; padding:10px; 
+    width: 100%; height: 300px; padding:10px;
     font-size: 15px; border: 1.5px solid #804000; border-radius:8px;
     box-sizing: border-box;
   }
   #descriptionModal button.save-btn {
-    margin-top:10px; 
-    background:#804000; color:white; border:none; 
+    margin-top:10px;
+    background:#804000; color:white; border:none;
     padding:10px 16px; border-radius:8px; cursor:pointer;
     font-weight: 700; transition: background 0.3s ease;
   }
@@ -86,30 +93,25 @@
 </style>
 </head>
 <body>
-
 <h1>Welcome, <span id="teacherName"></span></h1>
 <div class="role" id="teacherRole"></div>
 
 <div class="assignment-section">
-  <h2>Add Assignment</h2>
+  <h2>Add Assignment/Note</h2>
   <label>Class:</label>
   <select id="assignmentClass"></select>
-  
   <label>Title:</label>
-  <input type="text" id="assignmentTitle" placeholder="Enter assignment title">
-  
+  <input type="text" id="assignmentTitle" placeholder="Enter assignment/note title">
   <label>Description:</label>
-  <textarea id="assignmentDescription" placeholder="Enter assignment description"></textarea>
-  
+  <textarea id="assignmentDescription" placeholder="Enter assignment/note description"></textarea>
   <label>Due Date & Time:</label>
   <input type="datetime-local" id="assignmentDueDate">
-  
-  <button id="addBtn" onclick="addAssignment()">Add Assignment</button>
+  <button id="addBtn" onclick="addAssignment()">Add Assignment/Note</button>
   <div id="successMsg"></div>
 </div>
 
 <div class="search-container">
-  <input type="text" id="searchInput" placeholder="Search assignments by title or class..." onkeyup="searchAssignments()">
+  <input type="text" id="searchInput" placeholder="Search assignments/notes by title or class..." onkeyup="searchAssignments()">
 </div>
 
 <table id="assignmentTable">
@@ -130,7 +132,7 @@
 <div id="descriptionModal">
   <div class="modal-content">
     <button class="close-btn" onclick="closeModal()">Close</button>
-    <h3 id="modalTitle">Description</h3>
+    <h3 id="modalTitle">Assignment/Note Description</h3>
     <textarea id="modalTextarea"></textarea>
     <button class="save-btn" id="saveModalBtn">Save</button>
   </div>
@@ -186,7 +188,7 @@ document.getElementById('saveModalBtn').addEventListener('click', () => {
   closeModal();
 });
 
-// Table rendering
+// Table rendering with sorting by newest first
 function loadAssignments() {
   const params = new URLSearchParams({
     action: 'getTeacherAssignments',
@@ -199,6 +201,8 @@ function loadAssignments() {
       const tbody = document.querySelector('#assignmentTable tbody');
       tbody.innerHTML = '';
       if (data.success && data.assignments.length) {
+        data.assignments.sort((a, b) => new Date(b.Timestamp) - new Date(a.Timestamp));
+
         data.assignments.forEach(a => {
           const tr = document.createElement('tr');
           tr.innerHTML = `
@@ -214,19 +218,20 @@ function loadAssignments() {
           });
           tbody.appendChild(tr);
         });
+        // Auto scroll to top (newest assignment)
+        tbody.parentElement.scrollTop = 0;
       } else {
-        tbody.innerHTML = '<tr><td colspan="6">No assignments found.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6">No assignments/notes found.</td></tr>';
       }
     })
     .catch(err => console.error(err));
 }
 
-// Open modal on input description click
 document.getElementById('assignmentDescription').addEventListener('click', function() {
   openModal(this);
 });
 
-// Add assignment
+// Add assignment/note
 function addAssignment() {
   const addBtn = document.getElementById('addBtn');
   addBtn.disabled = true;
@@ -242,7 +247,7 @@ function addAssignment() {
     document.getElementById('successMsg').style.color = 'red';
     document.getElementById('successMsg').innerText = 'All fields are required!';
     addBtn.disabled = false;
-    addBtn.textContent = 'Add Assignment';
+    addBtn.textContent = 'Add Assignment/Note';
     return;
   }
 
@@ -260,29 +265,29 @@ function addAssignment() {
     .then(res => res.json())
     .then(data => {
       addBtn.disabled = false;
-      addBtn.textContent = 'Add Assignment';
+      addBtn.textContent = 'Add Assignment/Note';
       if(data.success){
         document.getElementById('successMsg').style.color = 'green';
-        document.getElementById('successMsg').innerText = 'Assignment added successfully!';
+        document.getElementById('successMsg').innerText = 'Assignment/Note added successfully!';
         document.getElementById('assignmentTitle').value = '';
         document.getElementById('assignmentDescription').value = '';
         document.getElementById('assignmentDueDate').value = '';
-        loadAssignments();
+        loadAssignments(); // auto-refresh table after adding
       } else {
         document.getElementById('successMsg').style.color = 'red';
-        document.getElementById('successMsg').innerText = data.message || 'Failed to add assignment.';
+        document.getElementById('successMsg').innerText = data.message || 'Failed to add assignment/note.';
       }
     })
     .catch(err => {
       addBtn.disabled = false;
-      addBtn.textContent = 'Add Assignment';
+      addBtn.textContent = 'Add Assignment/Note';
       console.error(err);
       document.getElementById('successMsg').style.color = 'red';
       document.getElementById('successMsg').innerText = 'Network error or server issue.';
     });
 }
 
-// Search assignments
+// Search assignments/notes
 function searchAssignments() {
   const filter = document.getElementById('searchInput').value.toLowerCase();
   document.querySelectorAll('#assignmentTable tbody tr').forEach(row => {
