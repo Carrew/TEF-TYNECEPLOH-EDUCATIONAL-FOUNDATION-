@@ -5,31 +5,113 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Teacher Dashboard</title>
 <style>
-  body { font-family: Arial, sans-serif; margin: 20px; }
-  h1 { color: #333; }
-  table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-  th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-  th { background-color: #f4f4f4; }
-  input, textarea, select { width: 100%; padding: 6px; margin: 4px 0; }
-  button { padding: 8px 12px; margin-top: 10px; }
+  body { 
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+    margin: 20px; 
+    background: #ffe6f0;
+    color: #4d1a00;
+  }
+  h1 { font-size: 2em; margin-bottom: 5px; }
+  h1 span { font-weight: 900; }
+  .role { font-size: 1.1em; color: #804000; margin-bottom: 20px; }
+  .assignment-section {
+    background: #fff0f5;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    margin-bottom: 30px;
+  }
+  label { font-weight: 600; display: block; margin: 10px 0 4px; }
+  input, textarea, select {
+    width: 100%; padding: 8px; border: 1.5px solid #804000; border-radius: 8px; 
+    font-size: 15px; outline-color: #ffb6c1; box-sizing: border-box;
+  }
+  textarea { resize: vertical; min-height: 60px; max-height: 150px; }
+  button { 
+    background: #804000; color: white; border: none; padding: 10px 16px; border-radius: 8px; 
+    cursor: pointer; font-weight: 700; margin-top: 10px;
+    transition: background 0.3s ease;
+  }
+  button:hover { background: #a0522d; }
+  button:disabled { background: #d9a77e; cursor: not-allowed; }
+  #successMsg { margin-top: 10px; font-weight: 600; color: green; }
+  table { width: 100%; border-collapse: collapse; margin-top: 20px; background: #fff0f5; border-radius: 8px; overflow: hidden; }
+  th, td { padding: 10px; border: 1px solid #804000; text-align: left; vertical-align: top; }
+  th { background: #ffe6f0; }
+  td textarea { width: 100%; border: none; resize: none; background: transparent; font-family: inherit; cursor: pointer; transition: all 0.3s ease; overflow: hidden; height: 50px; }
+  td textarea.expanded { height: auto; white-space: pre-wrap; }
+  .search-container { margin-bottom: 10px; }
+  .search-container input { width: 100%; padding: 8px; font-size: 14px; }
+
+  /* Modal Styles */
+  #descriptionModal {
+    display: none;
+    position: fixed; 
+    top: 0; left: 0; 
+    width: 100%; height: 100%; 
+    background: rgba(0,0,0,0.6); 
+    justify-content: center; 
+    align-items: center; 
+    z-index: 999;
+  }
+  #descriptionModal .modal-content {
+    background: #fff0f5; 
+    padding: 20px; 
+    border-radius: 12px; 
+    width: 90%; 
+    max-width: 600px; 
+    max-height: 80%; 
+    overflow-y: auto; 
+    position: relative;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+  }
+  #descriptionModal button.close-btn {
+    position: absolute; top: 10px; right: 10px; 
+    background:#804000; color:white; border:none; 
+    padding:5px 10px; border-radius:5px; cursor:pointer;
+    font-weight: 700;
+  }
+  #descriptionModal textarea {
+    width: 100%; height: 300px; padding:10px; 
+    font-size: 15px; border: 1.5px solid #804000; border-radius:8px;
+    box-sizing: border-box;
+  }
+  #descriptionModal button.save-btn {
+    margin-top:10px; 
+    background:#804000; color:white; border:none; 
+    padding:10px 16px; border-radius:8px; cursor:pointer;
+    font-weight: 700; transition: background 0.3s ease;
+  }
+  #descriptionModal button.save-btn:hover { background:#a0522d; }
 </style>
 </head>
 <body>
 
 <h1>Welcome, <span id="teacherName"></span></h1>
+<div class="role" id="teacherRole"></div>
 
-<h2>Add Assignment</h2>
-<div>
+<div class="assignment-section">
+  <h2>Add Assignment</h2>
   <label>Class:</label>
   <select id="assignmentClass"></select>
+  
   <label>Title:</label>
   <input type="text" id="assignmentTitle" placeholder="Enter assignment title">
+  
   <label>Description:</label>
   <textarea id="assignmentDescription" placeholder="Enter assignment description"></textarea>
-  <button onclick="addAssignment()">Add Assignment</button>
+  
+  <label>Due Date & Time:</label>
+  <input type="datetime-local" id="assignmentDueDate">
+  
+  <button id="addBtn" onclick="addAssignment()">Add Assignment</button>
+  <div id="successMsg"></div>
 </div>
 
-<h2>Your Assignments</h2>
+<div class="search-container">
+  <input type="text" id="searchInput" placeholder="Search assignments by title or class..." onkeyup="searchAssignments()">
+</div>
+
 <table id="assignmentTable">
   <thead>
     <tr>
@@ -37,28 +119,37 @@
       <th>Class</th>
       <th>Title</th>
       <th>Description</th>
-      <th>Date Added</th>
-      <th>Action</th>
+      <th>Created</th>
+      <th>Due Date</th>
     </tr>
   </thead>
   <tbody></tbody>
 </table>
 
+<!-- Modal -->
+<div id="descriptionModal">
+  <div class="modal-content">
+    <button class="close-btn" onclick="closeModal()">Close</button>
+    <h3 id="modalTitle">Description</h3>
+    <textarea id="modalTextarea"></textarea>
+    <button class="save-btn" id="saveModalBtn">Save</button>
+  </div>
+</div>
+
 <script>
 const API_URL = 'https://script.google.com/macros/s/AKfycbw9P_XOd4k498l0e4WDbFqAF1asb2u4sRj_uX2B-2S1MvyWOeWQZqxy8dr13mPOdNOeuw/exec';
-
-// Get teacher info from localStorage
 const teacher = JSON.parse(localStorage.getItem('teacher'));
+
 if (!teacher) {
   alert('You are not logged in!');
   window.location.href = 'login.html';
 } else {
   document.getElementById('teacherName').innerText = teacher.Name || teacher.TeacherName || 'Teacher';
-  populateClasses(teacher.Classes);
+  document.getElementById('teacherRole').innerText = 'Assigned Classes: ' + (teacher.Class || teacher.Classes || 'N/A');
+  populateClasses(teacher.Class || teacher.Classes);
   loadAssignments();
 }
 
-// Populate class dropdown
 function populateClasses(classesStr) {
   const classSelect = document.getElementById('assignmentClass');
   classSelect.innerHTML = '';
@@ -71,14 +162,37 @@ function populateClasses(classesStr) {
   });
 }
 
-// Load assignments for this teacher
+function formatDateTime(dt) {
+  if(!dt) return '';
+  const date = new Date(dt);
+  return date.toLocaleString([], {year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
+}
+
+// Modal logic
+let currentTextarea = null;
+function openModal(textarea) {
+  currentTextarea = textarea;
+  document.getElementById('modalTextarea').value = textarea.value;
+  document.getElementById('descriptionModal').style.display = 'flex';
+}
+function closeModal() {
+  document.getElementById('descriptionModal').style.display = 'none';
+  currentTextarea = null;
+}
+document.getElementById('saveModalBtn').addEventListener('click', () => {
+  if (currentTextarea) {
+    currentTextarea.value = document.getElementById('modalTextarea').value;
+  }
+  closeModal();
+});
+
+// Table rendering
 function loadAssignments() {
   const params = new URLSearchParams({
-    action: 'getAssignments',
+    action: 'getTeacherAssignments',
     role: 'teacher',
     teacherId: teacher.TeacherID
   });
-
   fetch(`${API_URL}?${params}`)
     .then(res => res.json())
     .then(data => {
@@ -89,12 +203,15 @@ function loadAssignments() {
           const tr = document.createElement('tr');
           tr.innerHTML = `
             <td>${a.AssignmentID}</td>
-            <td>${a.Class}</td>
+            <td>${a.Class || a.Classes || ''}</td>
             <td>${a.Title}</td>
-            <td>${a.Description}</td>
-            <td>${new Date(a.Timestamp).toLocaleString()}</td>
-            <td><button onclick="deleteAssignment('${a.AssignmentID}')">Delete</button></td>
+            <td><textarea readonly>${a.Description}</textarea></td>
+            <td>${formatDateTime(a.Timestamp)}</td>
+            <td>${formatDateTime(a.DueDate)}</td>
           `;
+          tr.querySelector('textarea').addEventListener('click', function() {
+            openModal(this);
+          });
           tbody.appendChild(tr);
         });
       } else {
@@ -104,60 +221,75 @@ function loadAssignments() {
     .catch(err => console.error(err));
 }
 
-// Add new assignment
-function addAssignment() {
-  const className = document.getElementById('assignmentClass').value;
-  const title = document.getElementById('assignmentTitle').value;
-  const description = document.getElementById('assignmentDescription').value;
+// Open modal on input description click
+document.getElementById('assignmentDescription').addEventListener('click', function() {
+  openModal(this);
+});
 
-  if (!title) { alert('Title is required'); return; }
+// Add assignment
+function addAssignment() {
+  const addBtn = document.getElementById('addBtn');
+  addBtn.disabled = true;
+  addBtn.textContent = 'Adding...';
+  document.getElementById('successMsg').innerText = '';
+
+  const className = document.getElementById('assignmentClass').value;
+  const title = document.getElementById('assignmentTitle').value.trim();
+  const description = document.getElementById('assignmentDescription').value.trim();
+  const dueDate = document.getElementById('assignmentDueDate').value;
+
+  if(!className || !title || !description || !dueDate) {
+    document.getElementById('successMsg').style.color = 'red';
+    document.getElementById('successMsg').innerText = 'All fields are required!';
+    addBtn.disabled = false;
+    addBtn.textContent = 'Add Assignment';
+    return;
+  }
 
   const formData = new URLSearchParams({
     action: 'addAssignment',
+    role: 'teacher',
     teacherId: teacher.TeacherID,
     class: className,
     title,
-    description
+    description,
+    dueDate
   });
 
   fetch(API_URL, { method: 'POST', body: formData })
     .then(res => res.json())
     .then(data => {
-      if (data.success) {
-        alert('Assignment added!');
-        loadAssignments();
+      addBtn.disabled = false;
+      addBtn.textContent = 'Add Assignment';
+      if(data.success){
+        document.getElementById('successMsg').style.color = 'green';
+        document.getElementById('successMsg').innerText = 'Assignment added successfully!';
         document.getElementById('assignmentTitle').value = '';
         document.getElementById('assignmentDescription').value = '';
-      } else {
-        alert(data.message || 'Failed to add assignment.');
-      }
-    })
-    .catch(err => console.error(err));
-}
-
-// Delete assignment
-function deleteAssignment(id) {
-  if (!confirm('Delete this assignment?')) return;
-
-  const formData = new URLSearchParams({
-    action: 'deleteAssignment',
-    teacherId: teacher.TeacherID,
-    assignmentId: id
-  });
-
-  fetch(API_URL, { method: 'POST', body: formData })
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) {
-        alert('Assignment deleted!');
+        document.getElementById('assignmentDueDate').value = '';
         loadAssignments();
       } else {
-        alert(data.message || 'Failed to delete assignment.');
+        document.getElementById('successMsg').style.color = 'red';
+        document.getElementById('successMsg').innerText = data.message || 'Failed to add assignment.';
       }
     })
-    .catch(err => console.error(err));
+    .catch(err => {
+      addBtn.disabled = false;
+      addBtn.textContent = 'Add Assignment';
+      console.error(err);
+      document.getElementById('successMsg').style.color = 'red';
+      document.getElementById('successMsg').innerText = 'Network error or server issue.';
+    });
+}
+
+// Search assignments
+function searchAssignments() {
+  const filter = document.getElementById('searchInput').value.toLowerCase();
+  document.querySelectorAll('#assignmentTable tbody tr').forEach(row => {
+    const text = row.innerText.toLowerCase();
+    row.style.display = text.includes(filter) ? '' : 'none';
+  });
 }
 </script>
-
 </body>
 </html>
