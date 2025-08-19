@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Student Assignments</title>
+<title>Student Assignments/Notes</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
 /* --- Shared Style (same as Teacher) --- */
@@ -125,10 +125,10 @@ table th {
 </head>
 <body>
 <div class="container">
-  <h2>📘 Student Assignments Dashboard</h2>
+  <h2>📘 Student Assignments/Notes Dashboard</h2>
   <span id="studentName"></span>
 
-  <input type="text" id="searchInput" placeholder="🔍 Search assignments..." onkeyup="filterTable()">
+  <input type="text" id="searchInput" placeholder="🔍 Search assignments/notes..." onkeyup="filterTable()">
 
   <div class="table-container">
     <table id="assignmentTable">
@@ -147,7 +147,7 @@ table th {
   <div id="notification"></div>
 </div>
 
-<!-- Modal for Assignment Details -->
+<!-- Modal for Assignment/Note Details -->
 <div id="pdfModal" class="modal">
   <div class="modal-content">
     <span class="close" onclick="closeModal()">&times;</span>
@@ -175,7 +175,7 @@ let selectedAssignment = null;
 
 function renderLoading() {
   const tbody = document.querySelector('#assignmentTable tbody');
-  tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">Loading assignments...</td></tr>`;
+  tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">Loading assignments/notes...</td></tr>`;
 }
 
 async function fetchAssignments() {
@@ -192,11 +192,11 @@ async function fetchAssignments() {
     const data = await response.json();
     if (data.success) {
       assignments = data.assignments || [];
-      // 🔥 sort by most recent (Timestamp DESC)
+      // Sort by most recent Timestamp
       assignments.sort((a, b) => new Date(b.Timestamp) - new Date(a.Timestamp));
       renderTable(assignments);
     } else {
-      alert(data.message || 'Failed to fetch assignments');
+      alert(data.message || 'Failed to fetch assignments/notes');
     }
   } catch (err) {
     console.error(err);
@@ -208,7 +208,7 @@ function renderTable(list) {
   const tbody = document.querySelector('#assignmentTable tbody');
   tbody.innerHTML = '';
   if (!list.length) {
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">No assignments found.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">No assignments/notes found.</td></tr>`;
     return;
   }
   list.forEach(a => {
@@ -244,7 +244,7 @@ function viewPDF(assignment) {
   selectedAssignment = assignment;
   const pdfContent = document.getElementById('pdfContent');
   pdfContent.innerHTML = `
-    <h3>${assignment.Title}</h3>
+    <h3>Assignment/Note: ${assignment.Title}</h3>
     <p><strong>Description:</strong> ${assignment.Description}</p>
     <p><strong>Due Date:</strong> ${new Date(assignment.DueDate).toLocaleString()}</p>
     <p><strong>Date Given:</strong> ${new Date(assignment.Timestamp).toLocaleString()}</p>
@@ -288,7 +288,7 @@ window.onclick = function(event) {
   if (event.target == modal) modal.style.display = "none";
 };
 
-// Load jsPDF then fetch assignments
+// Load jsPDF then fetch assignments/notes
 const script = document.createElement('script');
 script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
 script.onload = fetchAssignments;
