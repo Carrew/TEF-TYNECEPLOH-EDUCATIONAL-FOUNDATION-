@@ -58,15 +58,43 @@
       font-weight: 700;
       cursor: pointer;
       transition: background-color 0.3s ease;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
     }
-    button:hover {
+    button:hover:not(:disabled) {
       background-color: #b22222;
+    }
+    button:disabled {
+      background-color: #999;
+      cursor: not-allowed;
+    }
+    .spinner {
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #fff;
+      border-right: 3px solid #ffc0cb;
+      border-radius: 50%;
+      width: 16px;
+      height: 16px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
     }
     #result {
       margin-top: 15px;
       font-size: 15px;
       text-align: center;
       font-weight: 600;
+    }
+    .teacher-info {
+      font-weight: 700;
+      font-size: 16px;
+      margin-top: 10px;
+      color: #800000;
+      text-align: center;
     }
   </style>
 </head>
@@ -80,8 +108,9 @@
     <label for="pin">PIN</label>
     <input type="password" id="pin" placeholder="Enter your PIN" />
 
-    <button onclick="login()">Login</button>
+    <button id="loginBtn" onclick="login()">Login</button>
     <p id="result"></p>
+    <p id="teacherInfo" class="teacher-info"></p>
   </div>
 
   <script>
@@ -91,6 +120,8 @@
       const teacherId = document.getElementById('teacherId').value.trim();
       const pin = document.getElementById('pin').value.trim();
       const result = document.getElementById('result');
+      const info = document.getElementById('teacherInfo');
+      const btn = document.getElementById('loginBtn');
 
       if (!teacherId || !pin) {
         result.style.color = 'red';
@@ -98,8 +129,12 @@
         return;
       }
 
+      // show loading spinner
+      btn.disabled = true;
+      btn.innerHTML = '<div class="spinner"></div> Logging in...';
       result.style.color = '#800000';
-      result.textContent = 'Loading...';
+      result.textContent = 'Checking credentials...';
+      info.textContent = '';
 
       const formData = new URLSearchParams();
       formData.append('action', 'login');
@@ -117,7 +152,7 @@
 
         if (data.success) {
           result.style.color = 'green';
-          result.textContent = `Login successful! Welcome, ${data.name}`;
+          result.textContent = `Login successful!`;
 
           // Save all info received from API to localStorage
           localStorage.setItem('teacher', JSON.stringify({
@@ -125,17 +160,23 @@
             ...data
           }));
 
+          // Display Name + Classes
+          info.textContent = `Welcome, ${data.name} | Classes: ${data.class || "N/A"}`;
+
           setTimeout(() => {
             window.location.href = 'teacher_dashboard.html';
-          }, 1000);
+          }, 1200);
         } else {
           result.style.color = 'red';
-          result.textContent = data.message;
+          result.textContent = data.message || "Login failed.";
         }
       } catch (error) {
         result.style.color = 'red';
         result.textContent = 'Network error or server issue.';
         console.error(error);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Login";
       }
     }
   </script>
