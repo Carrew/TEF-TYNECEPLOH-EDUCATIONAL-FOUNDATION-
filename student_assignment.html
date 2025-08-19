@@ -78,7 +78,7 @@ table th {
   display: none;
   position: fixed;
   z-index: 999;
-  padding-top: 80px;
+  padding-top: 60px;
   left: 0;
   top: 0;
   width: 100%;
@@ -92,6 +92,7 @@ table th {
   padding: 20px;
   border-radius: 12px;
   max-width: 800px;
+  width: 90%; /* make modal mobile-friendly */
   position: relative;
 }
 .close {
@@ -139,16 +140,29 @@ table th {
 
 <script>
 const url = 'https://script.google.com/macros/s/AKfycbw9P_XOd4k498l0e4WDbFqAF1asb2u4sRj_uX2B-2S1MvyWOeWQZqxy8dr13mPOdNOeuw/exec';
-const studentId = localStorage.getItem('studentId');
-const studentName = localStorage.getItem('studentName');
-const studentClass = localStorage.getItem('studentClass') || '';
-document.getElementById('studentName').textContent = `Welcome, ${studentName || ''}`;
+
+// Parse student info from localStorage
+const student = JSON.parse(localStorage.getItem('student'));
+if (!student) {
+  alert('Access Denied. Please login.');
+  window.location.href = 'index.html';
+}
+const studentId = student.StudentID || '';
+const studentName = student.name || '';
+const studentClass = student.class || '';
+document.getElementById('studentName').textContent = `Welcome, ${studentName}`;
 
 let assignments = [];
 let selectedAssignment = null;
 
+function renderLoading() {
+  const tbody = document.querySelector('#assignmentTable tbody');
+  tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">Loading assignments...</td></tr>`;
+}
+
 async function fetchAssignments() {
   if (!studentId) return;
+  renderLoading();
   const params = new URLSearchParams();
   params.append('action', 'getStudentAssignments');
   params.append('role', 'student');
