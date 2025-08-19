@@ -50,29 +50,46 @@
 
   <script>
     // Get currently logged-in student info from localStorage
-    const studentId = localStorage.getItem("studentId");
-    const studentName = localStorage.getItem("studentName");
-    const studentClass = localStorage.getItem("studentClass"); // assuming class was saved on login
+    const student = JSON.parse(localStorage.getItem("student"));
 
-    if (!studentId) {
+    if (!student) {
       alert("Access Denied. Please login.");
       window.location.href = "index.html";
     } else {
-      document.getElementById("studentName").textContent = studentName || "Student";
-      document.getElementById("studentClass").textContent = `Class: ${studentClass || "Not Assigned"}`;
+      // Dynamic greeting based on time
+      const hours = new Date().getHours();
+      let greeting = "Hello";
+      if (hours < 12) greeting = "Good Morning";
+      else if (hours < 18) greeting = "Good Afternoon";
+      else greeting = "Good Evening";
+
+      document.getElementById("studentName").textContent = `${greeting}, ${student.name || "Student"}`;
+      document.getElementById("studentClass").textContent = `Class: ${student.class || "Not Assigned"}`;
     }
 
     function goToGrades() {
-      window.location.href = "student_grade.html";
+      const btn = document.querySelector('.grades-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Loading...';
+      setTimeout(() => {
+        window.location.href = "student_grade.html";
+      }, 300); // small delay to show spinner
     }
 
     function goToClassroom() {
-      window.location.href = "student_assignment.html";
+      const btn = document.querySelector('.classroom-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Loading...';
+      setTimeout(() => {
+        window.location.href = "student_assignment.html";
+      }, 300);
     }
 
     function logout() {
-      localStorage.clear();
-      window.location.href = "index.html";
+      if (confirm("Are you sure you want to logout?")) {
+        localStorage.clear();
+        window.location.href = "index.html";
+      }
     }
   </script>
 
