@@ -7,7 +7,7 @@
   <style>
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, #ffc0cb, #800000); /* pink to maroon */
+      background: linear-gradient(135deg, #ffc0cb, #800000);
       height: 100vh;
       margin: 0;
       display: flex;
@@ -58,9 +58,29 @@
       font-weight: 700;
       cursor: pointer;
       transition: background-color 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
     button:hover {
       background-color: #b22222;
+    }
+    button:disabled {
+      background-color: #a52a2a;
+      cursor: not-allowed;
+    }
+    .spinner {
+      border: 3px solid #fff;
+      border-top: 3px solid #800000;
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      margin-right: 8px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
     }
     #result {
       margin-top: 15px;
@@ -73,22 +93,24 @@
 <body>
   <div class="login-container">
     <h2>Student Login</h2>
-
     <label for="studentId">Student ID</label>
     <input type="text" id="studentId" placeholder="Enter your Student ID" />
 
     <label for="pin">PIN</label>
     <input type="password" id="pin" placeholder="Enter your PIN" />
 
-    <button onclick="login()">Login</button>
+    <button id="loginBtn" onclick="login()">Login</button>
     <p id="result"></p>
   </div>
 
   <script>
+    const API_URL = 'https://script.google.com/macros/s/AKfycbw9P_XOd4k498l0e4WDbFqAF1asb2u4sRj_uX2B-2S1MvyWOeWQZqxy8dr13mPOdNOeuw/exec';
+
     async function login() {
       const studentId = document.getElementById('studentId').value.trim();
       const pin = document.getElementById('pin').value.trim();
       const result = document.getElementById('result');
+      const btn = document.getElementById('loginBtn');
 
       if (!studentId || !pin) {
         result.style.color = 'red';
@@ -96,10 +118,11 @@
         return;
       }
 
+      // Show loading spinner and disable button
+      btn.disabled = true;
+      btn.innerHTML = '<div class="spinner"></div>Loading...';
       result.style.color = '#800000';
-      result.textContent = 'Loading...';
-
-      const url = 'https://script.google.com/macros/s/AKfycbw9P_XOd4k498l0e4WDbFqAF1asb2u4sRj_uX2B-2S1MvyWOeWQZqxy8dr13mPOdNOeuw/exec';
+      result.textContent = '';
 
       const formData = new URLSearchParams();
       formData.append('action', 'login');
@@ -108,21 +131,18 @@
       formData.append('pin', pin);
 
       try {
-        const response = await fetch(url, {
-          method: 'POST',
-          body: formData
-        });
-
+        const response = await fetch(API_URL, { method: 'POST', body: formData });
         const data = await response.json();
 
         if (data.success) {
-          // Save id, name, and class to localStorage for dashboard use
-          localStorage.setItem('studentId', studentId);
-          localStorage.setItem('studentName', data.name);
-          localStorage.setItem('studentClass', data.class); // <-- new line
-
           result.style.color = 'green';
           result.textContent = `Login successful! Welcome, ${data.name} (${data.class})`;
+
+          // Save all info received from backend to localStorage
+          localStorage.setItem('student', JSON.stringify({
+            StudentID: studentId,
+            ...data
+          }));
 
           setTimeout(() => {
             window.location.href = 'student_dashboard.html';
@@ -135,6 +155,10 @@
         result.style.color = 'red';
         result.textContent = 'Network error or server issue.';
         console.error(error);
+      } finally {
+        // Restore button
+        btn.disabled = false;
+        btn.innerHTML = 'Login';
       }
     }
   </script>
