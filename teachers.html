@@ -5,99 +5,32 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Proprietor Teacher Management</title>
 <style>
-  body {
-    font-family: Arial, sans-serif;
-    margin: 20px;
-    background: #f5f7fa;
-  }
-  h1 {
-    text-align: center;
-    color: #003f7d;
-  }
-  .form-container, .table-container {
-    background: white;
-    padding: 20px;
-    border-radius: 6px;
-    max-width: 900px;
-    margin: 20px auto;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-  }
-  label {
-    display: block;
-    margin-top: 10px;
-    font-weight: bold;
-  }
-  input[type="text"], select {
-    width: 100%;
-    padding: 8px;
-    margin-top: 4px;
-    box-sizing: border-box;
-  }
-  button {
-    margin-top: 15px;
-    padding: 10px 16px;
-    background-color: #00529b;
-    border: none;
-    color: white;
-    cursor: pointer;
-    border-radius: 4px;
-    font-size: 16px;
-  }
-  button:hover {
-    background-color: #003f7d;
-  }
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 15px;
-  }
-  th, td {
-    border: 1px solid #ccc;
-    padding: 10px;
-    text-align: center;
-  }
-  th {
-    background-color: #00529b;
-    color: white;
-  }
-  .actions button {
-    margin: 0 5px;
-    padding: 6px 12px;
-    font-size: 14px;
-  }
-  #message {
-    max-width: 900px;
-    margin: 15px auto;
-    text-align: center;
-    font-weight: bold;
-  }
-  #searchContainer {
-    max-width: 900px;
-    margin: 20px auto;
-  }
-  #searchInput {
-    width: 100%;
-    padding: 8px;
-    font-size: 16px;
-    box-sizing: border-box;
-  }
+  body { font-family: Arial, sans-serif; margin: 20px; background: #f5f7fa; }
+  h1 { text-align: center; color: #003f7d; }
+  .form-container, .table-container { background: white; padding: 20px; border-radius: 6px; max-width: 900px; margin: 20px auto; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
+  label { display: block; margin-top: 10px; font-weight: bold; }
+  input[type="text"], select { width: 100%; padding: 8px; margin-top: 4px; box-sizing: border-box; }
+  button { margin-top: 15px; padding: 10px 16px; background-color: #00529b; border: none; color: white; cursor: pointer; border-radius: 4px; font-size: 16px; }
+  button:hover { background-color: #003f7d; }
+  table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+  th, td { border: 1px solid #ccc; padding: 10px; text-align: center; }
+  th { background-color: #00529b; color: white; }
+  .actions button { margin: 0 5px; padding: 6px 12px; font-size: 14px; }
+  #message { max-width: 900px; margin: 15px auto; text-align: center; font-weight: bold; }
+  #searchContainer { max-width: 900px; margin: 20px auto; display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  #searchInput { flex:1; padding: 8px; font-size: 16px; box-sizing: border-box; }
+  #filterStatus { padding: 8px; font-size:16px; }
 
   /* Loader spinner */
-  .loader {
-    border: 4px solid #f3f3f3;
-    border-top: 4px solid #00529b;
-    border-radius: 50%;
-    width: 18px;
-    height: 18px;
-    animation: spin 1s linear infinite;
-    display: inline-block;
-    vertical-align: middle;
-    margin-left: 8px;
-  }
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
+  .loader { border: 4px solid #f3f3f3; border-top: 4px solid #00529b; border-radius: 50%; width: 18px; height: 18px; animation: spin 1s linear infinite; display: inline-block; vertical-align: middle; margin-left: 8px; }
+  @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+  #totals { max-width: 900px; margin: 10px auto; text-align: center; font-weight: bold; }
+
+  /* Delete modal */
+  #deleteModal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.4); justify-content: center; align-items: center; }
+  #deleteModal .modal-content { background: white; padding: 20px; border-radius: 6px; max-width: 400px; text-align: center; }
+  #deleteModal button { margin: 10px; }
 </style>
 </head>
 <body>
@@ -108,19 +41,15 @@
   <h2>Add / Edit Teacher</h2>
   <form id="teacherForm">
     <input type="hidden" id="editTeacherId" />
-
     <label for="teacherName">Name</label>
     <input type="text" id="teacherName" required />
-
     <label for="teacherClasses">Classes (comma separated)</label>
     <input type="text" id="teacherClasses" required />
-
     <label for="teacherStatus">Status</label>
     <select id="teacherStatus" required>
       <option value="Active">Active</option>
       <option value="Inactive">Inactive</option>
     </select>
-
     <button type="submit">Save Teacher</button>
     <button type="button" onclick="resetForm()" style="background:#777;">Clear</button>
   </form>
@@ -128,7 +57,14 @@
 
 <div id="searchContainer">
   <input type="text" id="searchInput" placeholder="Search by Teacher ID, Name, or Classes..." />
+  <select id="filterStatus">
+    <option value="All">All</option>
+    <option value="Active">Active</option>
+    <option value="Inactive">Inactive</option>
+  </select>
 </div>
+
+<div id="totals"></div>
 
 <div class="table-container">
   <h2>Teacher List</h2>
@@ -150,9 +86,18 @@
 
 <div id="message"></div>
 
+<div id="deleteModal">
+  <div class="modal-content">
+    <p>Are you sure you want to delete this teacher?</p>
+    <button id="confirmDelete">Yes</button>
+    <button id="cancelDelete">No</button>
+  </div>
+</div>
+
 <script>
 const BASE_URL = 'https://script.google.com/macros/s/AKfycbw9P_XOd4k498l0e4WDbFqAF1asb2u4sRj_uX2B-2S1MvyWOeWQZqxy8dr13mPOdNOeuw/exec';
 let loadedTeachers = [];
+let teacherToDelete = null;
 
 function setButtonLoading(button, isLoading) {
   if(isLoading) {
@@ -165,25 +110,50 @@ function setButtonLoading(button, isLoading) {
   }
 }
 
+function applyFilters() {
+  const searchQuery = document.getElementById('searchInput').value.trim().toLowerCase();
+  const statusFilter = document.getElementById('filterStatus').value;
+
+  let filtered = loadedTeachers.slice();
+
+  if (statusFilter !== 'All') filtered = filtered.filter(t => t.Status === statusFilter);
+  if (searchQuery) {
+    filtered = filtered.filter(t =>
+      (t.teacherId && t.teacherId.toLowerCase().includes(searchQuery)) ||
+      (t.Name && t.Name.toLowerCase().includes(searchQuery)) ||
+      (t.Classes && t.Classes.toLowerCase().includes(searchQuery))
+    );
+  }
+
+  // Show most recent first
+  filtered = filtered.slice().reverse();
+
+  renderTeachers(filtered);
+}
+
+function updateTotals(filtered = null) {
+  const teachers = filtered || loadedTeachers;
+  const total = teachers.length;
+  const active = teachers.filter(t => t.Status === 'Active').length;
+  const inactive = teachers.filter(t => t.Status === 'Inactive').length;
+  document.getElementById('totals').textContent = `Total Teachers: ${total} | Active: ${active} | Inactive: ${inactive}`;
+}
+
 async function loadTeachers() {
   clearMessage();
   const tbody = document.querySelector('#teachersTable tbody');
   tbody.innerHTML = '<tr><td colspan="7">Loading teachers... <span class="loader"></span></td></tr>';
-
   try {
     const url = new URL(BASE_URL);
     url.searchParams.append('action', 'getTeacherPrincipal');
     url.searchParams.append('role', 'principal');
-
     const res = await fetch(url);
     const data = await res.json();
-
     if (!data.success) {
       showMessage('Error loading teachers: ' + data.message, true);
       tbody.innerHTML = '<tr><td colspan="7">Failed to load teachers</td></tr>';
       return;
     }
-
     loadedTeachers = data.teachers.map(t => ({
       teacherId: t.TeacherID || '',
       Name: t.Name || '',
@@ -193,14 +163,8 @@ async function loadTeachers() {
       rowNumber: t.rowNumber || ''
     }));
 
-    // Show only most recently added teacher initially
-    if (loadedTeachers.length > 0) {
-      renderTeachers([loadedTeachers[loadedTeachers.length - 1]]);
-    } else {
-      renderTeachers([]);
-    }
-
-  } catch (err) {
+    applyFilters();
+  } catch(err) {
     showMessage('Failed to load teachers: ' + err.message, true);
     tbody.innerHTML = '<tr><td colspan="7">Failed to load teachers</td></tr>';
   }
@@ -209,48 +173,31 @@ async function loadTeachers() {
 function renderTeachers(teachers) {
   const tbody = document.querySelector('#teachersTable tbody');
   tbody.innerHTML = '';
-
   if (teachers.length === 0) {
     tbody.innerHTML = '<tr><td colspan="7">No teachers found.</td></tr>';
-    return;
+  } else {
+    teachers.forEach((teacher, index) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${index + 1}</td>
+        <td>${teacher.teacherId}</td>
+        <td>${teacher.Name}</td>
+        <td>${teacher.Classes}</td>
+        <td>${teacher.Status}</td>
+        <td>${teacher.PIN}</td>
+        <td class="actions">
+          <button onclick="editTeacherById('${teacher.teacherId}')">Edit</button>
+          <button onclick="showDeleteModal('${teacher.teacherId}')" style="background:#c0392b;">Delete</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
   }
-
-  teachers.forEach((teacher, index) => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${index + 1}</td>
-      <td>${teacher.teacherId}</td>
-      <td>${teacher.Name}</td>
-      <td>${teacher.Classes}</td>
-      <td>${teacher.Status}</td>
-      <td>${teacher.PIN}</td>
-      <td class="actions">
-        <button onclick="editTeacherById('${teacher.teacherId}')">Edit</button>
-        <button onclick="deleteTeacherById('${teacher.teacherId}', this)" style="background:#c0392b;">Delete</button>
-      </td>
-    `;
-    tbody.appendChild(tr);
-  });
+  updateTotals(teachers);
 }
 
-// Search functionality
-document.getElementById('searchInput').addEventListener('input', () => {
-  const query = document.getElementById('searchInput').value.trim().toLowerCase();
-  if (!query) {
-    // Show only most recent teacher if search empty
-    if (loadedTeachers.length > 0) renderTeachers([loadedTeachers[loadedTeachers.length - 1]]);
-    else renderTeachers([]);
-    return;
-  }
-
-  const filtered = loadedTeachers.filter(t =>
-    (t.teacherId && t.teacherId.toLowerCase().includes(query)) ||
-    (t.Name && t.Name.toLowerCase().includes(query)) ||
-    (t.Classes && t.Classes.toLowerCase().includes(query))
-  );
-
-  renderTeachers(filtered);
-});
+document.getElementById('searchInput').addEventListener('input', applyFilters);
+document.getElementById('filterStatus').addEventListener('change', applyFilters);
 
 function resetForm() {
   document.getElementById('teacherForm').reset();
@@ -260,23 +207,15 @@ function resetForm() {
 document.getElementById('teacherForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   clearMessage();
-
   const teacherId = document.getElementById('editTeacherId').value;
   const name = document.getElementById('teacherName').value.trim();
   const classes = document.getElementById('teacherClasses').value.trim();
   const status = document.getElementById('teacherStatus').value;
   const submitButton = e.target.querySelector('button[type="submit"]');
-
-  if (!name || !classes || !status) {
-    showMessage('Please fill all fields.', true);
-    return;
-  }
-
+  if (!name || !classes || !status) { showMessage('Please fill all fields.', true); return; }
   setButtonLoading(submitButton, true);
-
   if (!teacherId) await addTeacher(name, classes, status);
   else await updateTeacher(teacherId, name, classes, status);
-
   setButtonLoading(submitButton, false);
 });
 
@@ -285,34 +224,26 @@ async function addTeacher(name, classes, status) {
     const res = await fetch(BASE_URL, {
       method: 'POST',
       headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-      body: new URLSearchParams({
-        action: 'addTeacher',
-        role: 'principal',
-        name,
-        classes,
-        status
-      })
+      body: new URLSearchParams({ action: 'addTeacher', role: 'principal', name, classes, status })
     });
     const data = await res.json();
     if (data.success) {
       showMessage(`Teacher added successfully. ID: ${data.TeacherID}, PIN: ${data.PIN}`);
       resetForm();
       loadTeachers();
+      flashButton('green');
     } else showMessage('Failed to add teacher: ' + data.message, true);
-  } catch (err) {
-    showMessage('Error: ' + err.message, true);
-  }
+  } catch(err) { showMessage('Error: ' + err.message, true); }
 }
 
 function editTeacherById(teacherID) {
   const teacher = loadedTeachers.find(t => t.teacherId === teacherID);
   if (!teacher) return showMessage('Teacher not found.', true);
-
   document.getElementById('editTeacherId').value = teacher.teacherId;
   document.getElementById('teacherName').value = teacher.Name;
   document.getElementById('teacherClasses').value = teacher.Classes;
   document.getElementById('teacherStatus').value = teacher.Status;
-  window.scrollTo({top: 0, behavior: 'smooth'});
+  window.scrollTo({top:0, behavior:'smooth'});
 }
 
 async function updateTeacher(teacherId, name, classes, status) {
@@ -320,64 +251,36 @@ async function updateTeacher(teacherId, name, classes, status) {
     const res = await fetch(BASE_URL, {
       method: 'POST',
       headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-      body: new URLSearchParams({
-        action: 'editTeacher',
-        role: 'principal',
-        teacherId,
-        name,
-        classes,
-        status
-      })
+      body: new URLSearchParams({ action:'editTeacher', role:'principal', teacherId, name, classes, status })
     });
     const data = await res.json();
-    if (data.success) {
-      showMessage('Teacher updated successfully.');
-      resetForm();
-      loadTeachers();
-    } else showMessage('Failed to update teacher: ' + data.message, true);
-  } catch (err) {
-    showMessage('Error: ' + err.message, true);
-  }
+    if (data.success) { showMessage('Teacher updated successfully.'); resetForm(); loadTeachers(); flashButton('green'); }
+    else showMessage('Failed to update teacher: '+data.message,true);
+  } catch(err) { showMessage('Error: '+err.message,true); }
 }
 
-async function deleteTeacherById(teacherID, button) {
-  if (!confirm('Are you sure you want to delete this teacher?')) return;
-  setButtonLoading(button, true);
-  clearMessage();
+// Delete modal
+function showDeleteModal(id) { teacherToDelete = id; document.getElementById('deleteModal').style.display='flex'; }
+document.getElementById('cancelDelete').addEventListener('click', () => { document.getElementById('deleteModal').style.display='none'; teacherToDelete=null; });
+document.getElementById('confirmDelete').addEventListener('click', async () => { document.getElementById('deleteModal').style.display='none'; if(teacherToDelete) await deleteTeacherById(teacherToDelete); teacherToDelete=null; });
 
+async function deleteTeacherById(teacherID) {
+  clearMessage();
   try {
     const res = await fetch(BASE_URL, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-      body: new URLSearchParams({
-        action: 'deleteTeacher',
-        role: 'principal',
-        teacherId: teacherID
-      })
+      method:'POST',
+      headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body: new URLSearchParams({ action:'deleteTeacher', role:'principal', teacherId:teacherID })
     });
     const data = await res.json();
-    if (data.success) {
-      showMessage('Teacher deleted successfully.');
-      loadTeachers();
-    } else {
-      showMessage('Failed to delete teacher: ' + data.message, true);
-    }
-  } catch (err) {
-    showMessage('Error: ' + err.message, true);
-  } finally {
-    setButtonLoading(button, false);
-  }
+    if (data.success) { showMessage('Teacher deleted successfully.'); loadTeachers(); flashButton('red'); }
+    else showMessage('Failed to delete teacher: '+data.message,true);
+  } catch(err) { showMessage('Error: '+err.message,true); }
 }
 
-function showMessage(msg, isError = false) {
-  const messageDiv = document.getElementById('message');
-  messageDiv.textContent = msg;
-  messageDiv.style.color = isError ? 'red' : 'green';
-}
-
-function clearMessage() {
-  document.getElementById('message').textContent = '';
-}
+function showMessage(msg,isError=false) { const messageDiv=document.getElementById('message'); messageDiv.textContent=msg; messageDiv.style.color=isError?'red':'green'; }
+function clearMessage() { document.getElementById('message').textContent=''; }
+function flashButton(color) { document.body.style.transition='background 0.3s'; document.body.style.background=color==='green'?'#d4edda':'#f8d7da'; setTimeout(()=>document.body.style.background='#f5f7fa',300); }
 
 // Initial load
 loadTeachers();
