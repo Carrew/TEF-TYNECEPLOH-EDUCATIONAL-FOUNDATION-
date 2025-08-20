@@ -81,6 +81,23 @@
     font-size: 16px;
     box-sizing: border-box;
   }
+
+  /* Loader spinner */
+  .loader {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #00529b;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    animation: spin 1s linear infinite;
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 8px;
+  }
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
 </style>
 </head>
 <body>
@@ -110,7 +127,7 @@
 </div>
 
 <div id="searchContainer">
-  <input type="text" id="searchInput" placeholder="Search by Teacher ID or Name..." />
+  <input type="text" id="searchInput" placeholder="Search by Teacher ID, Name, or Classes..." />
 </div>
 
 <div class="table-container">
@@ -134,224 +151,236 @@
 <div id="message"></div>
 
 <script>
-  const BASE_URL = 'https://script.google.com/macros/s/AKfycbw9P_XOd4k498l0e4WDbFqAF1asb2u4sRj_uX2B-2S1MvyWOeWQZqxy8dr13mPOdNOeuw/exec';
+const BASE_URL = 'https://script.google.com/macros/s/AKfycbw9P_XOd4k498l0e4WDbFqAF1asb2u4sRj_uX2B-2S1MvyWOeWQZqxy8dr13mPOdNOeuw/exec';
+let loadedTeachers = [];
 
-  let loadedTeachers = [];
+function setButtonLoading(button, isLoading) {
+  if(isLoading) {
+    button.disabled = true;
+    button.dataset.originalText = button.textContent;
+    button.innerHTML = button.textContent + ' <span class="loader"></span>';
+  } else {
+    button.disabled = false;
+    button.innerHTML = button.dataset.originalText;
+  }
+}
 
-  async function loadTeachers() {
-    clearMessage();
-    const tbody = document.querySelector('#teachersTable tbody');
-    tbody.innerHTML = '';
+async function loadTeachers() {
+  clearMessage();
+  const tbody = document.querySelector('#teachersTable tbody');
+  tbody.innerHTML = '<tr><td colspan="7">Loading teachers... <span class="loader"></span></td></tr>';
 
-    try {
-      const url = new URL(BASE_URL);
-      url.searchParams.append('action', 'getTeacherList');
-      url.searchParams.append('role', 'principal');
+  try {
+    const url = new URL(BASE_URL);
+    url.searchParams.append('action', 'getTeacherPrincipal');
+    url.searchParams.append('role', 'principal');
 
-      const res = await fetch(url);
-      const data = await res.json();
+    const res = await fetch(url);
+    const data = await res.json();
 
-      if (!data.success) {
-        showMessage('Error loading teachers: ' + data.message, true);
-        return;
-      }
+    if (!data.success) {
+      showMessage('Error loading teachers: ' + data.message, true);
+      tbody.innerHTML = '<tr><td colspan="7">Failed to load teachers</td></tr>';
+      return;
+    }
 
-      loadedTeachers = data.data || [];
-      if (loadedTeachers.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7">No teachers found.</td></tr>';
-        return;
-      }
+    loadedTeachers = data.teachers.map(t => ({
+      teacherId: t.TeacherID || '',
+      Name: t.Name || '',
+      Classes: t.Classes || '',
+      Status: t.Status || 'Active',
+      PIN: t.PIN || '',
+      rowNumber: t.rowNumber || ''
+    }));
 
-      // Show only most recent teacher initially
+    // Show only most recently added teacher initially
+    if (loadedTeachers.length > 0) {
       renderTeachers([loadedTeachers[loadedTeachers.length - 1]]);
-    } catch (err) {
-      showMessage('Failed to load teachers: ' + err.message, true);
-    }
-  }
-
-  function renderTeachers(teachers) {
-    const tbody = document.querySelector('#teachersTable tbody');
-    tbody.innerHTML = '';
-
-    if (teachers.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7">No teachers found.</td></tr>';
-      return;
-    }
-
-    teachers.forEach((teacher, index) => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${index + 1}</td>
-        <td>${teacher.TeacherID || ''}</td>
-        <td>${teacher.Name || ''}</td>
-        <td>${teacher.Classes || ''}</td>
-        <td>${teacher.Status || ''}</td>
-        <td>${teacher.PIN || ''}</td>
-        <td class="actions">
-          <button onclick="editTeacherById('${teacher.TeacherID}')">Edit</button>
-          <button onclick="deleteTeacherById('${teacher.TeacherID}')" style="background:#c0392b;">Delete</button>
-        </td>
-      `;
-      tbody.appendChild(tr);
-    });
-  }
-
-  // Search input filtering by TeacherID or Name
-  document.getElementById('searchInput').addEventListener('input', () => {
-    const query = document.getElementById('searchInput').value.trim().toLowerCase();
-
-    if (!query) {
-      // Show only most recent teacher if search empty
-      if (loadedTeachers.length > 0) {
-        renderTeachers([loadedTeachers[loadedTeachers.length - 1]]);
-      } else {
-        renderTeachers([]);
-      }
-      return;
-    }
-
-    const filtered = loadedTeachers.filter(t => {
-      return (
-        (t.TeacherID && t.TeacherID.toLowerCase().includes(query)) ||
-        (t.Name && t.Name.toLowerCase().includes(query))
-      );
-    });
-
-    renderTeachers(filtered);
-  });
-
-  function resetForm() {
-    document.getElementById('teacherForm').reset();
-    document.getElementById('editTeacherId').value = '';
-  }
-
-  document.getElementById('teacherForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    clearMessage();
-
-    const teacherId = document.getElementById('editTeacherId').value;
-    const name = document.getElementById('teacherName').value.trim();
-    const classes = document.getElementById('teacherClasses').value.trim();
-    const status = document.getElementById('teacherStatus').value;
-
-    if (!name || !classes || !status) {
-      showMessage('Please fill all fields.', true);
-      return;
-    }
-
-    if (!teacherId) {
-      await addTeacher(name, classes, status);
     } else {
-      await updateTeacher(teacherId, name, classes, status);
+      renderTeachers([]);
     }
+
+  } catch (err) {
+    showMessage('Failed to load teachers: ' + err.message, true);
+    tbody.innerHTML = '<tr><td colspan="7">Failed to load teachers</td></tr>';
+  }
+}
+
+function renderTeachers(teachers) {
+  const tbody = document.querySelector('#teachersTable tbody');
+  tbody.innerHTML = '';
+
+  if (teachers.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7">No teachers found.</td></tr>';
+    return;
+  }
+
+  teachers.forEach((teacher, index) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${index + 1}</td>
+      <td>${teacher.teacherId}</td>
+      <td>${teacher.Name}</td>
+      <td>${teacher.Classes}</td>
+      <td>${teacher.Status}</td>
+      <td>${teacher.PIN}</td>
+      <td class="actions">
+        <button onclick="editTeacherById('${teacher.teacherId}')">Edit</button>
+        <button onclick="deleteTeacherById('${teacher.teacherId}', this)" style="background:#c0392b;">Delete</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
   });
+}
 
-  async function addTeacher(name, classes, status) {
-    try {
-      const res = await fetch(BASE_URL, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: new URLSearchParams({
-          action: 'addTeacher',
-          role: 'principal',
-          name,
-          classes,
-          status
-        })
-      });
+// Search functionality
+document.getElementById('searchInput').addEventListener('input', () => {
+  const query = document.getElementById('searchInput').value.trim().toLowerCase();
+  if (!query) {
+    // Show only most recent teacher if search empty
+    if (loadedTeachers.length > 0) renderTeachers([loadedTeachers[loadedTeachers.length - 1]]);
+    else renderTeachers([]);
+    return;
+  }
 
-      const data = await res.json();
-      if (data.success) {
-        showMessage(`Teacher added successfully. ID: ${data.TeacherID}, PIN: ${data.PIN}`);
-        resetForm();
-        loadTeachers();
-      } else {
-        showMessage('Failed to add teacher: ' + data.message, true);
-      }
-    } catch (err) {
-      showMessage('Error: ' + err.message, true);
+  const filtered = loadedTeachers.filter(t =>
+    (t.teacherId && t.teacherId.toLowerCase().includes(query)) ||
+    (t.Name && t.Name.toLowerCase().includes(query)) ||
+    (t.Classes && t.Classes.toLowerCase().includes(query))
+  );
+
+  renderTeachers(filtered);
+});
+
+function resetForm() {
+  document.getElementById('teacherForm').reset();
+  document.getElementById('editTeacherId').value = '';
+}
+
+document.getElementById('teacherForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  clearMessage();
+
+  const teacherId = document.getElementById('editTeacherId').value;
+  const name = document.getElementById('teacherName').value.trim();
+  const classes = document.getElementById('teacherClasses').value.trim();
+  const status = document.getElementById('teacherStatus').value;
+  const submitButton = e.target.querySelector('button[type="submit"]');
+
+  if (!name || !classes || !status) {
+    showMessage('Please fill all fields.', true);
+    return;
+  }
+
+  setButtonLoading(submitButton, true);
+
+  if (!teacherId) await addTeacher(name, classes, status);
+  else await updateTeacher(teacherId, name, classes, status);
+
+  setButtonLoading(submitButton, false);
+});
+
+async function addTeacher(name, classes, status) {
+  try {
+    const res = await fetch(BASE_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+      body: new URLSearchParams({
+        action: 'addTeacher',
+        role: 'principal',
+        name,
+        classes,
+        status
+      })
+    });
+    const data = await res.json();
+    if (data.success) {
+      showMessage(`Teacher added successfully. ID: ${data.TeacherID}, PIN: ${data.PIN}`);
+      resetForm();
+      loadTeachers();
+    } else showMessage('Failed to add teacher: ' + data.message, true);
+  } catch (err) {
+    showMessage('Error: ' + err.message, true);
+  }
+}
+
+function editTeacherById(teacherID) {
+  const teacher = loadedTeachers.find(t => t.teacherId === teacherID);
+  if (!teacher) return showMessage('Teacher not found.', true);
+
+  document.getElementById('editTeacherId').value = teacher.teacherId;
+  document.getElementById('teacherName').value = teacher.Name;
+  document.getElementById('teacherClasses').value = teacher.Classes;
+  document.getElementById('teacherStatus').value = teacher.Status;
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+async function updateTeacher(teacherId, name, classes, status) {
+  try {
+    const res = await fetch(BASE_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+      body: new URLSearchParams({
+        action: 'editTeacher',
+        role: 'principal',
+        teacherId,
+        name,
+        classes,
+        status
+      })
+    });
+    const data = await res.json();
+    if (data.success) {
+      showMessage('Teacher updated successfully.');
+      resetForm();
+      loadTeachers();
+    } else showMessage('Failed to update teacher: ' + data.message, true);
+  } catch (err) {
+    showMessage('Error: ' + err.message, true);
+  }
+}
+
+async function deleteTeacherById(teacherID, button) {
+  if (!confirm('Are you sure you want to delete this teacher?')) return;
+  setButtonLoading(button, true);
+  clearMessage();
+
+  try {
+    const res = await fetch(BASE_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+      body: new URLSearchParams({
+        action: 'deleteTeacher',
+        role: 'principal',
+        teacherId: teacherID
+      })
+    });
+    const data = await res.json();
+    if (data.success) {
+      showMessage('Teacher deleted successfully.');
+      loadTeachers();
+    } else {
+      showMessage('Failed to delete teacher: ' + data.message, true);
     }
+  } catch (err) {
+    showMessage('Error: ' + err.message, true);
+  } finally {
+    setButtonLoading(button, false);
   }
+}
 
-  function editTeacherById(teacherID) {
-    const teacher = loadedTeachers.find(t => t.TeacherID === teacherID);
-    if (!teacher) {
-      showMessage('Teacher data not found for editing.', true);
-      return;
-    }
-    document.getElementById('editTeacherId').value = teacher.TeacherID;
-    document.getElementById('teacherName').value = teacher.Name || '';
-    document.getElementById('teacherClasses').value = teacher.Classes || '';
-    document.getElementById('teacherStatus').value = teacher.Status || 'Active';
-    window.scrollTo({top: 0, behavior: 'smooth'});
-  }
+function showMessage(msg, isError = false) {
+  const messageDiv = document.getElementById('message');
+  messageDiv.textContent = msg;
+  messageDiv.style.color = isError ? 'red' : 'green';
+}
 
-  async function updateTeacher(teacherId, name, classes, status) {
-    try {
-      const res = await fetch(BASE_URL, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: new URLSearchParams({
-          action: 'editTeacher',
-          role: 'principal',
-          teacherId,
-          name,
-          classes,
-          status
-        })
-      });
+function clearMessage() {
+  document.getElementById('message').textContent = '';
+}
 
-      const data = await res.json();
-      if (data.success) {
-        showMessage('Teacher updated successfully.');
-        resetForm();
-        loadTeachers();
-      } else {
-        showMessage('Failed to update teacher: ' + data.message, true);
-      }
-    } catch (err) {
-      showMessage('Error: ' + err.message, true);
-    }
-  }
-
-  async function deleteTeacherById(teacherID) {
-    clearMessage();
-    if (!confirm('Are you sure you want to delete this teacher?')) return;
-
-    try {
-      const res = await fetch(BASE_URL, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: new URLSearchParams({
-          action: 'deleteTeacher',
-          role: 'principal',
-          teacherId: teacherID
-        })
-      });
-
-      const data = await res.json();
-      if (data.success) {
-        showMessage('Teacher deleted successfully.');
-        loadTeachers();
-      } else {
-        showMessage('Failed to delete teacher: ' + data.message, true);
-      }
-    } catch (err) {
-      showMessage('Error: ' + err.message, true);
-    }
-  }
-
-  function showMessage(msg, isError = false) {
-    const messageDiv = document.getElementById('message');
-    messageDiv.textContent = msg;
-    messageDiv.style.color = isError ? 'red' : 'green';
-  }
-
-  function clearMessage() {
-    document.getElementById('message').textContent = '';
-  }
-
-  loadTeachers();
+// Initial load
+loadTeachers();
 </script>
 
 </body>
