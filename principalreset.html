@@ -1,198 +1,248 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Reset Proprietor Credentials</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Principal Dashboard - Update Info</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 <style>
+  /* Rich school colors for the page */
   body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #fce4ec, #f8bbd0);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    margin: 0; padding: 0;
+    background: #d6336c; /* Rich pink */
+    margin: 0;
+    padding: 0;
   }
+
   .container {
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    max-width: 450px;
+    margin: 60px auto;
+    background: #6d4c41; /* Rich brown */
     padding: 30px 25px;
-    width: 100%;
-    max-width: 400px;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    color: #fff;
+    transition: background 0.3s;
   }
+
+  /* Step 2 highlight (slightly lighter brown) */
+  .container.step2 {
+    background: #7b5e57;
+  }
+
   h2 {
-    color: #d81b60;
     text-align: center;
+    color: #fff;
     margin-bottom: 20px;
   }
-  label {
-    font-weight: bold;
-    color: #333;
-    display: block;
-    margin-top: 10px;
+
+  h3 {
+    color: #f7b7c1; /* Muted pink for headings */
+    margin-bottom: 15px;
   }
+
+  label {
+    display: block;
+    margin-top: 15px;
+    font-weight: 500;
+    color: #f9c6d1;
+  }
+
   input {
     width: 100%;
     padding: 10px;
-    margin: 8px 0 18px 0;
-    border: 1px solid #ccc;
-    border-radius: 8px;
+    margin-top: 5px;
+    border-radius: 6px;
+    border: 1px solid #f7b7c1;
     font-size: 15px;
+    color: #333;
   }
+
   button {
     width: 100%;
-    background-color: #d81b60;
-    color: white;
-    border: none;
     padding: 12px;
+    margin-top: 20px;
+    background: #f7b7c1;
+    color: #5d4037;
+    border: none;
     border-radius: 8px;
     font-size: 16px;
+    font-weight: bold;
     cursor: pointer;
-    transition: background-color 0.3s;
+    position: relative;
+    transition: background 0.2s;
   }
+
   button:hover {
-    background-color: #880e4f;
+    background: #e88ca1;
   }
-  #message {
-    text-align: center;
+
+  .dot-loader span {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    margin: 0 2px;
+    background: #fff;
+    border-radius: 50%;
+    animation: blink 1s infinite;
+  }
+
+  .dot-loader span:nth-child(2) { animation-delay: 0.2s; }
+  .dot-loader span:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes blink {
+    0%, 80%, 100% { opacity: 0; }
+    40% { opacity: 1; }
+  }
+
+  .message {
     margin-top: 15px;
-    font-size: 15px;
+    font-weight: bold;
+    min-height: 20px;
   }
-  .hidden {
-    display: none;
-  }
+
+  .success { color: #28a745; }
+  .error { color: #dc3545; }
+
+  .hidden { display: none; }
 </style>
 </head>
 <body>
 
-<div class="container">
+<div class="container" id="mainContainer">
+  <h2><i class="fas fa-user-shield"></i> Principal Dashboard</h2>
 
-  <!-- Step 1: Old credentials form -->
-  <div id="oldCredentialsSection">
-    <h2>Verify Old Credentials</h2>
-    <label for="oldName">Old Name</label>
-    <input type="text" id="oldName" placeholder="Enter old Name" />
-    <label for="oldPin">Old PIN</label>
-    <input type="password" id="oldPin" placeholder="Enter old PIN" />
-    <button onclick="verifyOldCredentials()">Verify</button>
+  <!-- Step 1: Verification -->
+  <div id="verifySection">
+    <h3>Step 1: Verify Current Information</h3>
+    <form id="verifyForm">
+      <label for="currentName"><i class="fas fa-id-badge"></i> Current Name:</label>
+      <input type="text" id="currentName" name="currentName" required>
+
+      <label for="currentPIN"><i class="fas fa-key"></i> Current PIN:</label>
+      <input type="password" id="currentPIN" name="currentPIN" required>
+
+      <button type="submit">
+        Verify
+        <span class="dot-loader hidden" id="verifyLoader">
+          <span></span><span></span><span></span>
+        </span>
+      </button>
+    </form>
+    <p id="verifyMessage" class="message"></p>
   </div>
 
-  <!-- Step 2: New credentials form -->
-  <div id="newCredentialsSection" class="hidden">
-    <h2>Set New Credentials</h2>
-    <label for="newName">New Name</label>
-    <input type="text" id="newName" placeholder="Enter new Name" />
-    <label for="newPin">New PIN</label>
-    <input type="password" id="newPin" placeholder="Enter new PIN" />
-    <button onclick="submitNewCredentials()">Submit</button>
-  </div>
+  <!-- Step 2: Update -->
+  <div id="updateSection" class="hidden">
+    <h3>Step 2: Update Information</h3>
+    <form id="updateForm">
+      <label for="newName"><i class="fas fa-user-edit"></i> New Name:</label>
+      <input type="text" id="newName" name="newName" required>
 
-  <p id="message"></p>
+      <label for="newPIN"><i class="fas fa-key"></i> New PIN:</label>
+      <input type="password" id="newPIN" name="newPIN" required>
+
+      <button type="submit">
+        Update
+        <span class="dot-loader hidden" id="updateLoader">
+          <span></span><span></span><span></span>
+        </span>
+      </button>
+    </form>
+    <p id="updateMessage" class="message"></p>
+  </div>
 </div>
 
 <script>
-  const url = 'https://script.google.com/macros/s/AKfycbw9P_XOd4k498l0e4WDbFqAF1asb2u4sRj_uX2B-2S1MvyWOeWQZqxy8dr13mPOdNOeuw/exec';
+const ROUTER_URL = "https://script.google.com/macros/s/AKfycbw9P_XOd4k498l0e4WDbFqAF1asb2u4sRj_uX2B-2S1MvyWOeWQZqxy8dr13mPOdNOeuw/exec";
 
-  function showMessage(msg, color = 'red') {
-    const message = document.getElementById('message');
-    message.style.color = color;
-    message.textContent = msg;
-  }
+let currentName = '';
+let currentPIN = '';
 
-  async function verifyOldCredentials() {
-    const oldName = document.getElementById('oldName').value.trim();
-    const oldPin = document.getElementById('oldPin').value.trim();
+function postToRouter(payload, callback, loaderElement) {
+  loaderElement.classList.remove('hidden');
+  loaderElement.parentElement.disabled = true;
 
-    if (!oldName || !oldPin) {
-      showMessage('Please enter old Name and PIN.');
-      return;
+  fetch(ROUTER_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams(payload)
+  })
+  .then(res => res.text())
+  .then(text => {
+    let response;
+    try { response = JSON.parse(text); } 
+    catch(e) { response = [{ status: "error", message: "Invalid server response" }]; }
+
+    loaderElement.classList.add('hidden');
+    loaderElement.parentElement.disabled = false;
+
+    if (!Array.isArray(response)) response = [response];
+
+    callback(response);
+  })
+  .catch(err => {
+    loaderElement.classList.add('hidden');
+    loaderElement.parentElement.disabled = false;
+    callback([{ status: "error", message: err.message }]);
+  });
+}
+
+// Step 1: Verify
+document.getElementById('verifyForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  currentName = document.getElementById('currentName').value.trim();
+  currentPIN = document.getElementById('currentPIN').value.trim();
+
+  postToRouter({
+    action: 'multiPrincipalVerifyUpdate',
+    role: 'principal',
+    updates: JSON.stringify([{ currentName, currentPIN }])
+  }, function(response) {
+    const msgElem = document.getElementById('verifyMessage');
+    const container = document.getElementById('mainContainer');
+    if (response[0].status === "success") {
+      msgElem.className = 'message success';
+      msgElem.textContent = response[0].message || "Verification successful! Moving to Step 2...";
+      setTimeout(() => {
+        document.getElementById('verifySection').classList.add('hidden');
+        document.getElementById('updateSection').classList.remove('hidden');
+        container.classList.add('step2'); // highlight Step 2 container
+      }, 1000);
+    } else {
+      msgElem.className = 'message error';
+      msgElem.textContent = response[0].message || "Verification failed";
     }
+  }, document.getElementById('verifyLoader'));
+});
 
-    // Call backend login API with old credentials to verify
-    const formData = new URLSearchParams();
-    formData.append('action', 'login');
-    formData.append('role', 'principal');
-    formData.append('id', oldName);
-    formData.append('pin', oldPin);
+// Step 2: Update
+document.getElementById('updateForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const newName = document.getElementById('newName').value.trim();
+  const newPIN = document.getElementById('newPIN').value.trim();
 
-    try {
-      const response = await fetch(url, {
-        method: 'POST',
-        body: formData
-      });
-      const data = await response.json();
-
-      if (data.success) {
-        showMessage('Old credentials verified. Please enter new credentials.', 'green');
-        // Hide old credentials section, show new credentials form
-        document.getElementById('oldCredentialsSection').classList.add('hidden');
-        document.getElementById('newCredentialsSection').classList.remove('hidden');
-      } else {
-        showMessage(data.message || 'Old credentials verification failed.');
-      }
-    } catch (e) {
-      showMessage('Network or server error.');
-      console.error(e);
-    }
-  }
-
-  async function submitNewCredentials() {
-    const newName = document.getElementById('newName').value.trim();
-    const newPin = document.getElementById('newPin').value.trim();
-
-    if (!newName || !newPin) {
-      showMessage('Please enter new Name and PIN.');
-      return;
-    }
-
-    showMessage('Submitting new credentials...', 'black');
-
-    // Try multiple guesses for parameter names for new name
-    const paramNameOptions = ['newName', 'newId', 'name'];
-    let responseData = null;
-    let success = false;
-    let lastError = '';
-
-    for (const paramName of paramNameOptions) {
-      const formData = new URLSearchParams();
-      formData.append('action', 'resetPrincipalCredentials');
-      formData.append('role', 'principal');
-      formData.append(paramName, newName);
-      formData.append('newPin', newPin);
-
-      try {
-        const response = await fetch(url, {
-          method: 'POST',
-          body: formData
-        });
-        const data = await response.json();
-
-        if (data.success) {
-          success = true;
-          responseData = data;
-          break;
-        } else {
-          lastError = data.message || 'Failed to update credentials.';
-        }
-      } catch (e) {
-        lastError = 'Network or server error.';
-        console.error(e);
-      }
-    }
-
-    if (success) {
-      showMessage('Credentials updated successfully!', 'green');
-      localStorage.removeItem('principalName');
-      localStorage.removeItem('principalPin');
+  postToRouter({
+    action: 'multiPrincipalVerifyUpdate',
+    role: 'principal',
+    updates: JSON.stringify([{ currentName, currentPIN, newData: { Name: newName, PIN: newPIN } }])
+  }, function(response) {
+    const msgElem = document.getElementById('updateMessage');
+    if (response[0].status === "success") {
+      msgElem.className = 'message success';
+      msgElem.textContent = response[0].message || "Information updated successfully!";
+      currentName = newName;
+      currentPIN = newPIN;
+      // Redirect to principal login page after 1.2 seconds
       setTimeout(() => {
         window.location.href = 'principal_login.html';
-      }, 1500);
+      }, 1200);
     } else {
-      showMessage(lastError || 'Failed to update credentials.');
+      msgElem.className = 'message error';
+      msgElem.textContent = response[0].message || "Update failed";
     }
-  }
+  }, document.getElementById('updateLoader'));
+});
 </script>
 
 </body>
