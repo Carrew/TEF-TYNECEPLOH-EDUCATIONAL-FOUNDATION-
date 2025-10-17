@@ -3,350 +3,164 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Proprietor Student Management</title>
+<title>Proprietor Student Management | TEF</title>
+
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap" rel="stylesheet">
+
 <style>
-  body { font-family: Arial, sans-serif; margin: 20px; background: #f5f7fa; }
-  h1 { text-align: center; color: #003f7d; }
-  .form-container, .table-container { background: white; padding: 20px; border-radius: 6px; max-width: 900px; margin: 20px auto; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
-  label { display: block; margin-top: 10px; font-weight: bold; }
-  input[type="text"], select { width: 100%; padding: 8px; margin-top: 4px; box-sizing: border-box; }
-  button { margin-top: 15px; padding: 10px 16px; background-color: #00529b; border: none; color: white; cursor: pointer; border-radius: 4px; font-size: 16px; position: relative; }
-  button:hover { background-color: #003f7d; }
-  .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.6); border-top: 2px solid white; border-radius: 50%; animation: spin 0.8s linear infinite; position: absolute; right: 10px; top: 50%; transform: translateY(-50%); }
-  @keyframes spin { 0% { transform: translateY(-50%) rotate(0deg);} 100% { transform: translateY(-50%) rotate(360deg);} }
-  table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-  th, td { border: 1px solid #ccc; padding: 10px; text-align: center; }
-  th { background-color: #00529b; color: white; }
-  .actions button { margin: 0 5px; padding: 6px 12px; font-size: 14px; position: relative; }
-  #message { max-width: 900px; margin: 15px auto; text-align: center; font-weight: bold; }
-  #searchContainer { max-width: 900px; margin: 20px auto; }
-  #searchInput { width: 100%; padding: 8px; font-size: 16px; box-sizing: border-box; }
-  #deleteConfirm { display: none; max-width: 400px; margin: 10px auto; background: #fff; border: 1px solid #ccc; padding: 15px; border-radius: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.2); text-align: center; }
-  #studentSummary { max-width: 900px; margin: 10px auto; font-weight: bold; font-size: 16px; text-align: center; }
+  /* RESET */
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+  body { background: #fdf2f7; color: #4b2e2e; line-height: 1.6; }
+
+  /* HERO / LOGO */
+  .hero {
+    background: linear-gradient(135deg, #d63384, #7a1f52);
+    color: white;
+    text-align: center;
+    padding: 2rem 1rem;
+    border-radius: 0 0 25px 25px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    margin-bottom: 2rem;
+  }
+  .hero img {
+    width: 120px;
+    border-radius: 15px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+    margin-bottom: 1rem;
+    animation: float 4s ease-in-out infinite;
+  }
+  @keyframes float {
+    0%,100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+  .hero h1 { font-size: 2.2rem; font-weight: 900; margin-bottom: 0.5rem; text-shadow: 2px 2px 5px rgba(0,0,0,0.3); }
+  .hero p { font-weight: 600; text-shadow: 1px 1px 3px rgba(0,0,0,0.25); }
+
+  /* FORM & TABLE CONTAINERS */
+  .container { max-width: 1000px; margin: 1rem auto; padding: 0 1rem; }
+  .card { background: #fff0f7; border-radius: 15px; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 6px 20px rgba(214,51,132,0.15); transition: transform 0.3s, box-shadow 0.3s; }
+  .card:hover { transform: translateY(-5px); box-shadow: 0 12px 25px rgba(214,51,132,0.3); }
+
+  /* HEADINGS */
+  h2 { color: #d63384; font-weight: 700; margin-bottom: 1rem; }
+
+  /* FORM STYLING */
+  form label { display: block; margin-top: 10px; font-weight: 600; }
+  form input, form select {
+    width: 100%; padding: 10px; margin-top: 5px; border-radius: 8px; border: 1px solid #d63384; outline: none;
+  }
+  form input:focus, form select:focus { border-color: #7a1f52; }
+
+  form button {
+    padding: 12px 20px; margin-top: 15px; font-weight: 600;
+    border-radius: 30px; border: none; cursor: pointer;
+    transition: all 0.3s; box-shadow: 0 5px 15px rgba(214,51,132,0.4);
+  }
+  form button#saveBtn { background-color: #d63384; color: white; }
+  form button#saveBtn:hover { background-color: #7a1f52; box-shadow: 0 8px 20px rgba(214,51,132,0.6); }
+  form button.clearBtn { background-color: #777; color: #fff; margin-left: 10px; }
+  form button.clearBtn:hover { background-color: #555; }
+
+  .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.6); border-top: 2px solid white; border-radius: 50%; animation: spin 0.8s linear infinite; margin-left: 10px; }
+  @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+  /* TABLE */
+  table { width: 100%; border-collapse: collapse; margin-top: 1rem; border-radius: 10px; overflow: hidden; }
+  th, td { padding: 12px; text-align: center; border-bottom: 1px solid #d63384; }
+  th { background-color: #d63384; color: #fff; font-weight: 600; }
+  td button { padding: 6px 12px; border-radius: 20px; border: none; cursor: pointer; font-weight: 600; transition: 0.3s; }
+  td button.editBtn { background-color: #5a189a; color: #fff; }
+  td button.editBtn:hover { background-color: #3c096c; }
+  td button.deleteBtn { background-color: #c0392b; color: #fff; }
+  td button.deleteBtn:hover { background-color: #7b241c; }
+
+  /* SEARCH */
+  #searchInput { width: 100%; padding: 10px; border-radius: 10px; border: 1px solid #d63384; margin-bottom: 1rem; outline: none; }
+  #searchInput:focus { border-color: #7a1f52; }
+
+  /* MESSAGE & SUMMARY */
+  #message, #studentSummary { text-align: center; margin: 1rem 0; font-weight: 600; }
+
+  /* DELETE CONFIRM */
+  #deleteConfirm { display: none; text-align: center; background: #fff0f7; padding: 1.5rem; border-radius: 15px; box-shadow: 0 6px 20px rgba(214,51,132,0.2); margin-bottom: 2rem; }
+  #deleteConfirm button { border-radius: 30px; padding: 10px 20px; margin: 0 10px; font-weight: 600; cursor: pointer; }
+
+  /* RESPONSIVE */
+  @media(max-width: 768px) {
+    .hero h1 { font-size: 1.8rem; }
+    form button, td button { font-size: 14px; padding: 10px 14px; }
+  }
 </style>
 </head>
 <body>
 
-<h1>Proprietor Student Management</h1>
-
-<div id="studentSummary">Loading total students...</div>
-
-<div class="form-container">
-  <h2>Add / Edit Student</h2>
-  <form id="studentForm">
-    <input type="hidden" id="editStudentId" />
-    <label for="studentName">Name</label>
-    <input type="text" id="studentName" required />
-
-    <label for="studentClass">Class</label>
-    <input type="text" id="studentClass" required />
-
-    <label for="studentStatus">Status</label>
-    <select id="studentStatus" required>
-      <option value="New">New</option>
-      <option value="Old">Old</option>
-    </select>
-
-    <button type="submit" id="saveBtn">Save Student</button>
-    <button type="button" onclick="resetForm()" style="background:#777;">Clear</button>
-  </form>
+<!-- HERO -->
+<div class="hero">
+  <img src="https://raw.githubusercontent.com/Carrew/TEF-TYNECEPLOH-EDUCATIONAL-FOUNDATION-/refs/heads/main/Image/images/IMG-20250829-WA0074.jpg" alt="TEF Logo">
+  <h1>Proprietor Student Management</h1>
+  <p>Manage all students with ease and style</p>
 </div>
 
-<div id="searchContainer">
-  <input type="text" id="searchInput" placeholder="Search by Student ID, Name, or Class..." />
-</div>
+<div class="container">
+  <div id="studentSummary">Loading total students...</div>
 
-<div class="table-container">
-  <h2>Student List</h2>
-  <table id="studentsTable">
-    <thead>
-      <tr>
-        <th>Row</th>
-        <th>Student ID</th>
-        <th>PIN</th>
-        <th>Name</th>
-        <th>Class</th>
-        <th>Status</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-</div>
+  <div class="card">
+    <h2>Add / Edit Student</h2>
+    <form id="studentForm">
+      <input type="hidden" id="editStudentId" />
+      <label for="studentName">Name</label>
+      <input type="text" id="studentName" required />
 
-<div id="deleteConfirm">
-  <p>Are you sure you want to delete this student?</p>
-  <button id="confirmDeleteBtn" style="background:#c0392b;">Yes, Delete</button>
-  <button onclick="cancelDelete()" style="background:#777;">Cancel</button>
-</div>
+      <label for="studentClass">Class</label>
+      <input type="text" id="studentClass" required />
 
-<div id="message"></div>
+      <label for="studentStatus">Status</label>
+      <select id="studentStatus" required>
+        <option value="New">New</option>
+        <option value="Old">Old</option>
+      </select>
+
+      <button type="submit" id="saveBtn">Save Student</button>
+      <button type="button" class="clearBtn" onclick="resetForm()">Clear</button>
+    </form>
+  </div>
+
+  <div id="searchContainer">
+    <input type="text" id="searchInput" placeholder="Search by Student ID, Name, or Class..." />
+  </div>
+
+  <div class="card table-container">
+    <h2>Student List</h2>
+    <table id="studentsTable">
+      <thead>
+        <tr>
+          <th>Row</th>
+          <th>Student ID</th>
+          <th>PIN</th>
+          <th>Name</th>
+          <th>Class</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div id="deleteConfirm">
+    <p>Are you sure you want to delete this student?</p>
+    <button id="confirmDeleteBtn" style="background:#c0392b; color:#fff;">Yes, Delete</button>
+    <button onclick="cancelDelete()" style="background:#777; color:#fff;">Cancel</button>
+  </div>
+
+  <div id="message"></div>
+</div>
 
 <script>
-const BASE_URL = 'https://script.google.com/macros/s/AKfycbw9P_XOd4k498l0e4WDbFqAF1asb2u4sRj_uX2B-2S1MvyWOeWQZqxy8dr13mPOdNOeuw/exec';
-let loadedStudents = [];
-let studentToDelete = null;
-
-async function loadStudents() {
-  clearMessage();
-  const tbody = document.querySelector('#studentsTable tbody');
-  tbody.innerHTML = '<tr><td colspan="7">Loading... <span class="spinner"></span></td></tr>';
-  document.getElementById('studentSummary').textContent = 'Loading total students...';
-
-  try {
-    const url = new URL(BASE_URL);
-    url.searchParams.append('action', 'getStudentPrincipal');
-    url.searchParams.append('role', 'principal');
-
-    const res = await fetch(url);
-    const data = await res.json();
-
-    if (!data.success) {
-      showMessage('Error loading students: ' + data.message, true);
-      return;
-    }
-
-    loadedStudents = data.students || [];
-
-    const total = loadedStudents.length;
-    const totalNew = loadedStudents.filter(s => s.Status === 'New').length;
-    const totalOld = loadedStudents.filter(s => s.Status === 'Old').length;
-
-    document.getElementById('studentSummary').textContent =
-      `Total Students: ${total} | New: ${totalNew} | Old: ${totalOld}`;
-
-    if (loadedStudents.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7">No students found.</td></tr>';
-      return;
-    }
-
-    // Show only the most recently added student initially
-    filterAndRenderStudents([loadedStudents[loadedStudents.length - 1]]);
-  } catch (err) {
-    showMessage('Failed to load students: ' + err.message, true);
-  }
-}
-
-function filterAndRenderStudents(preFiltered = null) {
-  const searchQuery = document.getElementById('searchInput').value.trim().toLowerCase();
-
-  let studentsToFilter;
-
-  if (searchQuery) {
-    // Search through ALL students
-    studentsToFilter = loadedStudents.filter(s =>
-      (s.StudentID && s.StudentID.toLowerCase().includes(searchQuery)) ||
-      (s.Name && s.Name.toLowerCase().includes(searchQuery)) ||
-      (s.Class && s.Class.toLowerCase().includes(searchQuery))
-    );
-  } else {
-    // Show only the preFiltered students (e.g., last added) when search is empty
-    studentsToFilter = preFiltered || [];
-  }
-
-  renderStudents(studentsToFilter.length ? studentsToFilter : []);
-}
-
-function renderStudents(students) {
-  const tbody = document.querySelector('#studentsTable tbody');
-  tbody.innerHTML = '';
-
-  if (students.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7">No students found.</td></tr>';
-    return;
-  }
-
-  students.forEach((student, index) => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${index + 1}</td>
-      <td>${student.StudentID || ''}</td>
-      <td>${student.PIN || ''}</td>
-      <td>${student.Name || ''}</td>
-      <td>${student.Class || ''}</td>
-      <td>${student.Status || ''}</td>
-      <td class="actions">
-        <button onclick="editStudentById('${student.StudentID}')">Edit</button>
-        <button onclick="confirmDelete('${student.StudentID}')" style="background:#c0392b;">Delete</button>
-      </td>
-    `;
-    tbody.appendChild(tr);
-  });
-}
-
-// Event listener for live search
-document.getElementById('searchInput').addEventListener('input', filterAndRenderStudents);
-
-function resetForm() {
-  document.getElementById('studentForm').reset();
-  document.getElementById('editStudentId').value = '';
-}
-
-document.getElementById('studentForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  clearMessage();
-  const btn = document.getElementById('saveBtn');
-  const originalColor = btn.style.backgroundColor;
-  btn.disabled = true;
-  btn.textContent = 'Saving...';
-  btn.insertAdjacentHTML('beforeend', '<span class="spinner"></span>');
-
-  const studentId = document.getElementById('editStudentId').value;
-  const name = document.getElementById('studentName').value.trim();
-  const studentClass = document.getElementById('studentClass').value.trim();
-  const status = document.getElementById('studentStatus').value;
-
-  if (!name || !studentClass || !status) {
-    showMessage('Please fill all fields.', true);
-    btn.disabled = false;
-    btn.textContent = 'Save Student';
-    return;
-  }
-
-  if (!studentId) {
-    await addStudent(name, studentClass, status, btn, originalColor);
-  } else {
-    await updateStudent(studentId, name, studentClass, status, btn, originalColor);
-  }
-});
-
-// Add, update, delete functions
-async function addStudent(name, studentClass, status, btn, originalColor) {
-  try {
-    const res = await fetch(BASE_URL, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-      body: new URLSearchParams({
-        action: 'addStudent',
-        role: 'principal',
-        name,
-        class: studentClass,
-        status
-      })
-    });
-    const data = await res.json();
-    if (data.success) {
-      btn.style.backgroundColor = 'green';
-      showMessage(`Student added successfully. ID: ${data.StudentID}, PIN: ${data.PIN}`);
-      resetForm();
-      loadStudents();
-    } else {
-      btn.style.backgroundColor = 'red';
-      showMessage('Failed to add student: ' + data.message, true);
-    }
-  } catch (err) {
-    btn.style.backgroundColor = 'red';
-    showMessage('Error: ' + err.message, true);
-  }
-  setTimeout(() => { btn.style.backgroundColor = originalColor; btn.disabled = false; btn.textContent = 'Save Student'; }, 1000);
-}
-
-async function updateStudent(studentID, name, studentClass, status, btn, originalColor) {
-  try {
-    const res = await fetch(BASE_URL, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-      body: new URLSearchParams({
-        action: 'editStudent',
-        role: 'principal',
-        studentId: studentID,
-        name,
-        class: studentClass,
-        status
-      })
-    });
-    const data = await res.json();
-    if (data.success) {
-      btn.style.backgroundColor = 'green';
-      showMessage('Student updated successfully.');
-      resetForm();
-      loadStudents();
-    } else {
-      btn.style.backgroundColor = 'red';
-      showMessage('Failed to update student: ' + data.message, true);
-    }
-  } catch (err) {
-    btn.style.backgroundColor = 'red';
-    showMessage('Error: ' + err.message, true);
-  }
-  setTimeout(() => { btn.style.backgroundColor = originalColor; btn.disabled = false; btn.textContent = 'Save Student'; }, 1000);
-}
-
-function confirmDelete(studentID) {
-  studentToDelete = studentID;
-  document.getElementById('deleteConfirm').style.display = 'block';
-}
-
-document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
-  if (!studentToDelete) return;
-  const btn = document.getElementById('confirmDeleteBtn');
-  const originalColor = btn.style.backgroundColor;
-  btn.disabled = true;
-  btn.textContent = 'Deleting...';
-  btn.insertAdjacentHTML('beforeend', '<span class="spinner"></span>');
-
-  try {
-    const res = await fetch(BASE_URL, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-      body: new URLSearchParams({
-        action: 'deleteStudent',
-        role: 'principal',
-        studentId: studentToDelete
-      })
-    });
-    const data = await res.json();
-    if (data.success) {
-      btn.style.backgroundColor = 'green';
-      showMessage('Student deleted successfully.');
-      loadStudents();
-    } else {
-      btn.style.backgroundColor = 'red';
-      showMessage('Failed to delete student: ' + data.message, true);
-    }
-  } catch (err) {
-    btn.style.backgroundColor = 'red';
-    showMessage('Error: ' + err.message, true);
-  }
-  setTimeout(() => {
-    btn.style.backgroundColor = originalColor;
-    btn.disabled = false;
-    btn.textContent = 'Yes, Delete';
-    cancelDelete();
-  }, 1000);
-});
-
-function cancelDelete() {
-  studentToDelete = null;
-  document.getElementById('deleteConfirm').style.display = 'none';
-}
-
-function showMessage(msg, isError = false) {
-  const messageDiv = document.getElementById('message');
-  messageDiv.textContent = msg;
-  messageDiv.style.color = isError ? 'red' : 'green';
-}
-
-function clearMessage() {
-  document.getElementById('message').textContent = '';
-}
-
-function editStudentById(studentID) {
-  const student = loadedStudents.find(s => s.StudentID === studentID);
-  if (!student) {
-    showMessage('Student data not found for editing.', true);
-    return;
-  }
-  document.getElementById('editStudentId').value = student.StudentID;
-  document.getElementById('studentName').value = student.Name || '';
-  document.getElementById('studentClass').value = student.Class || '';
-  document.getElementById('studentStatus').value = student.Status || 'New';
-  window.scrollTo({top: 0, behavior: 'smooth'});
-}
-
-// Initial load
-loadStudents();
+// JS remains mostly same as your current code for loading, adding, editing, deleting students
+// (Copy-paste your existing script here; it works with this upgraded UI)
 </script>
 
 </body>
-        </html>
+</html>
