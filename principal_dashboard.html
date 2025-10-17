@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Principal Dashboard</title>
+<title>Principal Dashboard | TEF</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap" rel="stylesheet">
 <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        margin: 0;
-        padding: 0;
-        background: linear-gradient(135deg, #ffe4ec, #7b1e3a);
+        font-family: 'Poppins', sans-serif;
+        background: linear-gradient(135deg, #fdf2f7, #7a1f52);
         color: #fff;
         display: flex;
         flex-direction: column;
@@ -17,13 +17,27 @@
         min-height: 100vh;
     }
     header {
-        background-color: rgba(123, 30, 58, 0.9);
+        background-color: rgba(123, 30, 58, 0.95);
         width: 100%;
-        padding: 15px;
+        padding: 20px;
         text-align: center;
         font-size: 1.5rem;
-        font-weight: bold;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        font-weight: 700;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+    }
+    header img {
+        width: 100px;
+        border-radius: 15px;
+        box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+        animation: float 4s ease-in-out infinite;
+    }
+    @keyframes float {
+        0%,100% { transform: translateY(0px); }
+        50% { transform: translateY(-8px); }
     }
     .container {
         flex: 1;
@@ -31,40 +45,49 @@
         flex-wrap: wrap;
         justify-content: center;
         gap: 20px;
-        padding: 30px;
+        padding: 40px 20px;
+        max-width: 1200px;
+        width: 100%;
     }
     .btn {
-        background-color: #d81b60;
+        background: linear-gradient(135deg, #d63384, #7a1f52);
         color: white;
         border: none;
-        padding: 15px 25px;
+        padding: 18px 28px;
         font-size: 1.1rem;
         font-weight: 600;
-        border-radius: 10px;
+        border-radius: 15px;
         cursor: pointer;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        box-shadow: 0 6px 18px rgba(0,0,0,0.3);
         transition: all 0.3s ease;
         min-width: 220px;
         text-align: center;
     }
     .btn:hover {
-        background-color: #ad1457;
-        transform: translateY(-3px);
-        box-shadow: 0 6px 10px rgba(0,0,0,0.3);
+        background: linear-gradient(135deg, #a02363, #4b0f2a);
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.4);
     }
     footer {
-        background-color: rgba(123, 30, 58, 0.9);
-        padding: 10px;
+        background-color: rgba(123, 30, 58, 0.95);
+        padding: 15px;
         width: 100%;
         text-align: center;
-        font-size: 0.9rem;
+        font-size: 0.95rem;
+        box-shadow: 0 -2px 8px rgba(0,0,0,0.3);
+    }
+    @media(max-width: 768px) {
+        header h1 { font-size: 1.3rem; }
+        .btn { min-width: 100%; font-size: 1rem; padding: 15px 20px; }
+        .container { padding: 20px 10px; gap: 15px; }
     }
 </style>
 </head>
 <body onload="loadPrincipalName()">
 
 <header>
-    Welcome, <span id="principalName">Principal</span>
+    <img src="https://raw.githubusercontent.com/Carrew/TEF-TYNECEPLOH-EDUCATIONAL-FOUNDATION-/refs/heads/main/Image/images/IMG-20250829-WA0074.jpg" alt="TEF Logo">
+    <span>Welcome, <strong id="principalName">Principal</strong></span>
 </header>
 
 <div class="container">
@@ -90,7 +113,7 @@ function loadPrincipalName() {
 function logout() {
   localStorage.removeItem("principalName");
   localStorage.removeItem("principalPin");
-  window.location.href = 'principal_login.html'; // Update this if your login file name differs
+  window.location.href = 'principal_login.html';
 }
 </script>
 
